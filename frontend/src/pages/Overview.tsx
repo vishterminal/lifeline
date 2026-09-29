@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import {
-  api, day, money, pretty, when, type Confirmation, type Flagged, type IngestEvent, type Obligation, type Source, type User,
+  api, day, money, pretty, when, type Confirmation, type Flagged, type IngestEvent, type Obligation, type RankedBill, type Source, type User,
 } from '../api'
 import { BarChart, type BarDatum } from '../charts'
 import { Badge, Card, EmptyState, OUTCOME_TEXT, OriginBadge, PageHeader, StatusBadge } from '../ui'
@@ -27,6 +27,7 @@ export default function Overview() {
   const flagged = useQuery({ queryKey: ['flagged'], queryFn: () => api<Flagged[]>('/flagged') })
   const events = useQuery({ queryKey: ['events'], queryFn: () => api<IngestEvent[]>('/ingest-events?limit=6') })
   const sources = useQuery({ queryKey: ['sources'], queryFn: () => api<Source[]>('/sources') })
+  const ranked = useQuery({ queryKey: ['bills', 'risk'], queryFn: () => api<RankedBill[]>('/bills?sort=risk'), refetchInterval: 30_000 })
 
   const user = me.data?.user
   const all = obls.data ?? []
@@ -53,6 +54,9 @@ export default function Overview() {
     return { label: i === 0 ? 'This wk' : fmt(start), sub: `${fmt(start)} – ${fmt(end)}`, value: inWeek.reduce((s, o) => s + num(o.amount), 0), count: inWeek.length }
   })
   const next = open[0]
+  const riskOpen = (ranked.data ?? []).filter((b) => OPEN.has(b.status))
+  const atRisk = riskOpen.reduce((s, b) => s + Number(b.consequence.direct ?? 0), 0)
+  const top = riskOpen[0]
   const firstName = (user?.name || user?.email?.split('@')[0] || '').split(' ')[0]
 
   return (
@@ -77,6 +81,7 @@ export default function Overview() {
           </div>
           <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-card)] border border-line bg-card">
             {[
+              ['Penalties at stake', money(atRisk), 'Late fees + lapse costs if missed · estimated'],
               ['Upcoming bills · 30 days', money(due30), `${next30.length} bill${next30.length === 1 ? '' : 's'}`],
               ['Left after bills', afterBills != null ? money(afterBills) : '—', afterBills != null ? (afterBills < 0 ? 'Short before salary' : 'Balance minus 30-day bills') : 'Needs balance'],
               ['Pending review', String(needsReview + suspicious), `${needsReview} to confirm · ${suspicious} suspicious`],
@@ -137,6 +142,15 @@ export default function Overview() {
 
         {/* RIGHT: stacked summaries */}
         <div className="space-y-5 lg:col-span-3">
+          {top && (
+            <Card title="Highest ₹ risk">
+              <div className="font-semibold">{top.biller_raw ?? top.biller_norm}</div>
+              <div className="num mt-1 text-3xl font-bold text-gold">{money(top.consequence.total)}</div>
+              <p className="text-sm text-muted">at risk · {dueText(top.due_date).toLowerCase()}</p>
+              {top.chain_hint && <p className="mt-2 rounded-lg border border-amber-400/25 bg-amber-500/10 px-2.5 py-1.5 text-xs text-amber-200">⛓ {top.chain_hint}</p>}
+              <Link to="/bills" className="mt-3 inline-block text-sm font-medium text-gold hover:underline">See ranking →</Link>
+            </Card>
+          )}
           <Card title="This week">
             <div className="num text-3xl font-bold text-ink">{money(thisWeek.reduce((s, o) => s + num(o.amount), 0))}</div>
             <p className="text-sm text-muted">{thisWeek.length} bill{thisWeek.length === 1 ? '' : 's'} due in the next 7 days</p>

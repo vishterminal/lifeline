@@ -38,7 +38,7 @@ def test_puc_blocks_insurance_chain_and_whatif(client, user):
     rows = {r["id"]: r for r in client.get("/api/bills", headers=h).json()}
     assert "insurance renewal will be blocked" in rows[puc]["chain_hint"]
     assert rows[puc]["consequence"]["downstream"] == "6000"  # insurance lapse 5000 + compliance 2000 x 0.5
-    assert rows[ins]["chain_hint"].startswith("Needs a valid PUC certificate")
+    assert rows[ins]["chain_hint"].startswith("Needs a valid PUC certificate first (expires ")
 
     ch = client.get(f"/api/obligations/{puc}/chain", headers=h).json()
     assert ch["downstream"][0]["obligation_id"] == ins and ch["downstream"][0]["relation"] == "BLOCKS_RENEWAL"

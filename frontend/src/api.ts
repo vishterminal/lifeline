@@ -177,3 +177,15 @@ export interface SyncResult {
   fetched: number; saved: number; needs_review: number; flagged: number
   status: string; error: string | null; items?: SyncItem[]
 }
+
+export interface ChainLink {
+  obligation_id: string | null; label: string; due_date: string | null
+  relation: 'BLOCKS_RENEWAL' | 'AFFECTS'; explanation: string; cost: string | null
+}
+export interface Consequence {
+  direct: string | null; downstream: string; total: string
+  label: 'VERIFIED' | 'ESTIMATED' | 'UNKNOWN'; tier: 'HIGH' | 'MEDIUM' | 'LOW'
+  sources: string[]; explanation: string[]; upstream: ChainLink[]; downstream_links: ChainLink[]; chain_hint: string | null
+}
+export interface RankedBill extends Obligation { consequence: Consequence; chain_hint: string | null }
+export interface WhatIf extends Consequence { skipped: string; timeline_effects: { date: string; text: string; amount: string | null }[] }

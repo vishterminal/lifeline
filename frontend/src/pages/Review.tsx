@@ -38,7 +38,7 @@ function ConfirmationCard({ c }: { c: Confirmation }) {
       }
       return api(`/confirmations/${c.id}/resolve`, { method: 'POST', json: action === 'confirm' ? { action, fields } : { action } })
     },
-    onSuccess: () => ['confirmations', 'obligations'].forEach((k) => qc.invalidateQueries({ queryKey: [k] })),
+    onSuccess: () => ['confirmations', 'obligations', 'bills'].forEach((k) => qc.invalidateQueries({ queryKey: [k] })),
     onError: (e) => setErr(e instanceof ApiError ? e.message : 'Failed'),
   })
 

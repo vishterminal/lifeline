@@ -179,7 +179,8 @@ def assess(o: Obligation, all_obls: list[Obligation], today: date) -> Consequenc
         hint = f"{_name(o)} expires {_days(o.due_date, today)} → {blocked[0].label} renewal will be blocked"
     elif up_links:
         u = up_links[0]
-        hint = f"Needs a valid {u.label} first ({'expired' if u.due_date and u.due_date < today.isoformat() else 'due ' + u.due_date})"
+        ud = date.fromisoformat(u.due_date) if u.due_date else None
+        hint = f"Needs a valid {u.label} first ({'expired' if ud and ud < today else 'expires ' + ud.strftime('%d %b') if ud else 'date unknown'})"
     return Consequence(d.amount, downstream.quantize(Decimal("1")), total.quantize(Decimal("1")), label,
                        tier(total), sorted(set(s for s in sources if s)), explanation, up_links, down_links, hint)
 

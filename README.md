@@ -25,7 +25,8 @@ The first run creates a private Python environment and installs dependencies (1�
 3. Open **Review** and confirm the TNEB bill. It arrived through **three channels** but is shown **once**.
 4. On **Connect → SMS**, forward the **payment debited** SMS. The bill is **marked paid by itself**.
 5. Open **Review → Suspicious** to see the fake "Netflix" email blocked, with the reasons.
-6. **Reset demo** replays everything from scratch.
+6. Open **Bills**. They're ranked by **₹ risk**, not date: the **PUC certificate (no amount!) is #1**, because missing it blocks the bike-insurance renewal. Click it to see the chain, try **🔮 What if I skip this?**, and **Pay now (simulated)**.
+7. **Reset demo** replays everything from scratch.
 
 ### Judge mode vs live mode
 
@@ -53,7 +54,9 @@ Screenshots go in `frontend/public/proof/`.
 | 🧠 | **Two independent readers** | An AI extractor and a rules extractor read every message. If they disagree on an amount or date, **you** choose; Lifeline never guesses. |
 | 🔁 | **Dedup, paid detection, recurring** | The same bill arriving through several channels becomes one item. A "debited" SMS or receipt closes the matching bill. Monthly and annual renewals are detected. |
 | 🔒 | **Privacy by design** | Raw messages are **never stored or logged**. Only the extracted biller, amount and date are kept. Card, account, Aadhaar, PAN and phone numbers are masked **before** any AI call. A test scans the database file to prove this. |
-| 📊 | **Dashboard** | Overview (balance snapshot, 30-day bills, weekly payments chart, alerts), Review, Bills, Calendar, Settings. |
+| ₹ | **Ranked by real consequence** | Each bill's cost if missed = late fee or lapse cost + knock-on effects through the **obligation graph** (table-driven rules, e.g. *PUC → blocks → vehicle insurance*). HIGH/MEDIUM/LOW tiers, and every number labelled **Verified** or **Estimated**. |
+| 🔮 | **What-if + one-tap pay** | "What if I skip this?" shows the dated chain of effects. Pay is **simulated** (no real money moves) and never uses links from the message. Mark paid, dismiss, snooze. |
+| 📊 | **Dashboard** | Overview (balance snapshot, penalties at stake, highest-risk bill, weekly payments chart, alerts), Review, Bills, Calendar, Settings. |
 
 ![Connect](docs/screenshots/connect.png)
 
@@ -94,7 +97,7 @@ cd backend && .venv/Scripts/python -m pytest      # Windows
 cd backend && .venv/bin/python -m pytest          # macOS / Linux
 ```
 
-**73 tests** cover:
+**81 tests** cover:
 - OTP filter and redaction
 - both extractors and reconcile
 - trust scoring, including "a friend sends a fake bill from Gmail"
@@ -103,6 +106,7 @@ cd backend && .venv/bin/python -m pytest          # macOS / Linux
 - SMS and Twilio webhooks (bad token, bad signature)
 - Gmail OAuth state and expiry
 - upload limits
+- ₹-risk ranking, the PUC → insurance chain, what-if, mock pay, and rejection of "Verified" without a source
 - the full judge demo
 - a scan of the database file proving no message text is stored
 
@@ -124,7 +128,7 @@ See **[docs/SETUP_HUMAN_STEPS.md](docs/SETUP_HUMAN_STEPS.md)** for the Google OA
 ```
 start.bat / start.sh      one-command launchers
 backend/app/              FastAPI app: routers/, services/ (pipeline, trust, extraction, gmail, whatsapp, sms), llm/, data/
-backend/tests/            73 tests
+backend/tests/            81 tests
 frontend/src/             React app: pages/ (Overview, Connect, Review, Bills, Calendar, Settings, Proof), judge mode, simulators
 frontend/dist/            built web app, served at http://localhost:8000
 docs/                     setup steps and screenshots
@@ -133,5 +137,15 @@ the product specification full product specification
 
 ## Status
 
-- **Built:** the input side end to end (collect, understand, verify, dedupe, detect payments and subscriptions), plus the dashboard UI.
-- **Next:** ₹-consequence ranking, the obligation graph (PUC → insurance), escalating reminders (push/WhatsApp), and the waiver-letter drafter. These are specified in the product specification.
+- **Built:**
+  - the input side end to end (collect, understand, verify, dedupe, detect payments and subscriptions)
+  - ₹-consequence ranking with the obligation graph
+  - what-if
+  - simulated one-tap pay
+  - the dashboard UI
+- **Penalty figures:** the seeded numbers are **illustrative placeholders, always labelled Estimated**. Sourced figures go in `backend/app/data/penalty_rules_seed.json`. The loader refuses "Verified" without a real source.
+- **Next:**
+  - escalating reminders (push / WhatsApp / family alert)
+  - cash-flow planner
+  - the penalty-waiver letter drafter
+  - These are all specified in the product specification.
