@@ -92,6 +92,11 @@ def _deliver(db: Session, user: User, o: Obligation, channel: str, tier: str, st
 
                 ok = whatsapp_service.send_whatsapp(user.phone_e164, text)
                 status = "SENT" if ok else "FAILED"
+    elif channel == "PUSH" and not simulated:
+        from app.services import push_service
+
+        if push_service.enabled() and push_service.send(db, user, "Lifeline reminder", text, "/reminders"):
+            status = "SENT"
     elif channel == "FAMILY_WHATSAPP":
         status = "SIMULATED" if (simulated or not live_wa) else "SENT"
     db.add(Reminder(obligation_id=o.id, user_id=user.id, channel=channel, tier=tier, stage=stage,

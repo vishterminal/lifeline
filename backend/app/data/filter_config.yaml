@@ -5,6 +5,8 @@ otp_patterns:
   - 'do not share'
   - "don'?t share"
   - 'verification code'
+  - 'ओटीपी'
+  - 'கடவுச்சொல்'
 bill_keywords:
   - due
   - bill
@@ -22,6 +24,19 @@ bill_keywords:
   - late fee
   - charged
   - puc
+  # Hindi
+  - बिल
+  - देय
+  - बकाया
+  - भुगतान
+  - प्रीमियम
+  - नवीनीकरण
+  # Tamil
+  - கட்டணம்
+  - செலுத்த
+  - நிலுவை
+  - பில்
+  - புதுப்பி
 # Extra known sender IDs (in addition to biller_aliases.sender_ids). Keep empty
 # until verified.
 known_sender_ids: []

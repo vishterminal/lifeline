@@ -16,3 +16,4 @@ slowapi>=0.1.9
 PyYAML>=6.0
 httpx>=0.27
 psycopg[binary]>=3.2
+pywebpush>=2.0

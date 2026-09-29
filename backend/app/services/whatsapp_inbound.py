@@ -13,7 +13,7 @@ from app.timeutil import now_utc
 log = logging.getLogger("lifeline.whatsapp")
 
 HELP_TEXT = ("Lifeline: forward any bill, renewal notice or receipt (text, photo or PDF) to this number "
-             "and it goes on your timeline. Commands: WHAT'S DUE, HELP.")
+             "and it goes on your timeline. Commands: WHAT'S DUE, PAID, 15, 30, HELP - or ask a question ending with ?")
 MAX_MEDIA = 3
 
 
@@ -73,6 +73,11 @@ def handle_inbound(db: Session, params: dict, media_fetcher=None, origin: str = 
         o.snoozed_until = now_utc() + timedelta(minutes=minutes)
         reminder_service.acknowledge(db, o, f"SNOOZE_{minutes}")
         return f"OK - I'll remind you about {name} again in {minutes} minutes."
+
+    if body.endswith("?") and (params.get("NumMedia") or "0") == "0":  # a question, not a forwarded bill
+        from app.services import ask_service
+
+        return ask_service.answer(db, user, body)["answer"]
 
     replies: list[str] = []
     try:

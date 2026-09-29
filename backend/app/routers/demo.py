@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.deps import current_user
 from app.errors import ApiError
-from app.models import ChargeEvent, Payment, Reminder, WaiverDraft, ConnectedSource, FlaggedItem, IngestEvent, Obligation, PendingConfirmation, User
+from app.models import ChargeEvent, Document, Payment, Reminder, WaiverDraft, ConnectedSource, FlaggedItem, IngestEvent, Obligation, PendingConfirmation, User
 from app.schemas import SimulateTextIn
 from app.services import gmail_service, pipeline, whatsapp_inbound
 from app.services.gmail_service import render_fixture_text
@@ -33,6 +33,8 @@ SMS_FIXTURES = {
                  "AI and rules read different amounts → you choose"),
     "late": ("VM-BESCOM", "BESCOM: Your electricity bill of Rs. 2,310.00 was due on {{date:-3}}. A late fee of Rs. 100 has been added.",
              "Overdue bill -> Penalty Fighter can draft a waiver"),
+    "hindi": ("VM-JIOINF", "प्रिय ग्राहक, आपके Jio पोस्टपेड बिल ₹599 की देय तिथि {{date:+6}} है। कृपया समय पर भुगतान करें।",
+              "Hindi bill -> understood like any other"),
     "debit": ("VM-HDFCBK", "Rs.1840.00 debited from A/c XX1234 to TNEB on {{date:+0}}. Avl bal Rs.20,150.00",
               "Payment → matching bill marked paid automatically"),
 }
@@ -150,6 +152,7 @@ def reset_demo(user: User = Depends(current_user), db: Session = Depends(get_db)
     db.execute(delete(Payment).where(Payment.obligation_id.in_(demo_ids)))
     db.execute(delete(Reminder).where(Reminder.obligation_id.in_(demo_ids)))
     db.execute(delete(WaiverDraft).where(WaiverDraft.obligation_id.in_(demo_ids)))
+    db.execute(delete(Document).where(Document.obligation_id.in_(demo_ids)))
     for model in (PendingConfirmation, FlaggedItem, ChargeEvent, Obligation):
         r = db.execute(delete(model).where(model.user_id == user.id, model.origin == "DEMO"))
         counts[model.__tablename__] = r.rowcount

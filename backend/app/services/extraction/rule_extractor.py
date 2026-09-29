@@ -14,7 +14,7 @@ from app.models import BillerAlias
 from app.services.billers import find_in_text
 from app.services.extraction.types import Extraction
 
-_AMOUNT = re.compile(r"(?:₹|\bRs\.?|\bINR)\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)", re.I)
+_AMOUNT = re.compile(r"(?:₹|\bRs\.?|\bINR|रु\.?|रुपये|ரூ\.?)\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)", re.I)
 _AMOUNT_GOOD_CTX = re.compile(
     r"(bill|amount|due|payable|premium|charged|debited|received|paid|of|total|renew|price|fee for)\W*$", re.I
 )
@@ -36,7 +36,8 @@ _KIND_RULES: list[tuple[str, re.Pattern]] = [
     ("PAYMENT_CONFIRMATION", re.compile(r"\bdebited\b|payment (?:was )?successful|paid successfully|has been paid|thank you for (?:your )?payment|payment of .* (?:is )?successful|transaction successful", re.I)),
     ("RECEIPT", re.compile(r"\breceipt\b|payment received|\bcharged\b|we(?:'ve| have) received your payment|invoice paid", re.I)),
     ("RENEWAL_NOTICE", re.compile(r"\brenew(?:al|ed|s)?\b|\bexpir(?:es|y|ing|ed)\b|valid (?:till|until)", re.I)),
-    ("DUE_NOTICE", re.compile(r"\bdue\b|\bpay (?:by|before|now)\b|\bpayable\b|\bbill\b|\binvoice\b|\bemi\b", re.I)),
+    ("DUE_NOTICE", re.compile(r"\bdue\b|\bpay (?:by|before|now)\b|\bpayable\b|\bbill\b|\binvoice\b|\bemi\b"
+                              r"|देय|बकाया|भुगतान करें|बिल|கட்டணம்|செலுத்த|நிலுவை|பில்", re.I)),
 ]
 
 _TYPE_RULES: list[tuple[str, re.Pattern]] = [
@@ -45,10 +46,10 @@ _TYPE_RULES: list[tuple[str, re.Pattern]] = [
     ("INSURANCE_OTHER", re.compile(r"insurance|policy premium|\bpremium\b", re.I)),
     ("DRIVING_LICENCE", re.compile(r"driving licen[cs]e|\bdl\b renewal", re.I)),
     ("LOAN_EMI", re.compile(r"\bemi\b|\bloan\b", re.I)),
-    ("ELECTRICITY", re.compile(r"electricity|power bill|\bkwh\b|\beb bill\b", re.I)),
+    ("ELECTRICITY", re.compile(r"electricity|power bill|\bkwh\b|\beb bill\b|बिजली|மின்", re.I)),
     ("WATER", re.compile(r"\bwater (?:bill|charges|tax)\b", re.I)),
     ("GAS", re.compile(r"\b(?:lpg|gas) (?:bill|booking|cylinder)\b|piped gas", re.I)),
-    ("PHONE_INTERNET", re.compile(r"broadband|postpaid|mobile bill|recharge|fiber|fibre|internet", re.I)),
+    ("PHONE_INTERNET", re.compile(r"broadband|postpaid|mobile bill|recharge|fiber|fibre|internet|पोस्टपेड|मोबाइल", re.I)),
     ("SUBSCRIPTION", re.compile(r"subscription|membership|\bplan\b.*(?:renew|charged)", re.I)),
     ("APPOINTMENT", re.compile(r"appointment", re.I)),
 ]
@@ -98,7 +99,7 @@ def _parse_date(raw: str, today: date, prefer: str) -> tuple[date | None, bool]:
         "REQUIRE_PARTS": ["day", "month"],
     }
     try:
-        dt = dateparser.parse(raw, languages=["en"], settings=settings)
+        dt = dateparser.parse(raw, languages=["en", "hi", "ta"], settings=settings)
     except Exception:  # dateparser can raise on odd inputs
         return None, False
     if dt is None:

@@ -268,3 +268,41 @@ class WaiverDraft(Base):
     outcome: Mapped[str] = mapped_column(String(10), default="UNKNOWN")  # UNKNOWN | GRANTED | DENIED
     outcome_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Document(Base):
+    """Documents vault: expiry dates of IDs/certificates (never the file). Each one is
+    tracked as a renewal obligation so reminders and the obligation graph apply."""
+    __tablename__ = "documents"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    kind: Mapped[str] = mapped_column(String(30))  # PUC | INSURANCE_VEHICLE | DRIVING_LICENCE | VEHICLE_RC | PASSPORT | INSURANCE_OTHER | OTHER
+    label: Mapped[str] = mapped_column(String(120))
+    number_last4: Mapped[str | None] = mapped_column(String(4))
+    vehicle_ref: Mapped[str | None] = mapped_column(String(40))
+    expiry_date: Mapped[date] = mapped_column(Date)
+    obligation_id: Mapped[str | None] = mapped_column(String(36))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class BillSplit(Base):
+    """A share of a bill owed by someone else (roommate / family)."""
+    __tablename__ = "bill_splits"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    obligation_id: Mapped[str] = mapped_column(ForeignKey("obligations.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    phone_e164: Mapped[str | None] = mapped_column(String(20))
+    share_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
+    paid: Mapped[bool] = mapped_column(Boolean, default=False)
+    reminded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class PushSubscription(Base):
+    __tablename__ = "push_subscriptions"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    endpoint: Mapped[str] = mapped_column(String(600), unique=True)
+    p256dh: Mapped[str] = mapped_column(String(200))
+    auth: Mapped[str] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
