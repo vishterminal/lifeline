@@ -1,0 +1,27 @@
+# Bill prefilter (spec F6). Tunable without code changes.
+otp_patterns:
+  - '\botp\b'
+  - 'one[\s-]?time[\s-]?password'
+  - 'do not share'
+  - "don'?t share"
+  - 'verification code'
+bill_keywords:
+  - due
+  - bill
+  - invoice
+  - renewal
+  - renew
+  - premium
+  - debited
+  - subscription
+  - receipt
+  - payment
+  - expires
+  - expiry
+  - emi
+  - late fee
+  - charged
+  - puc
+# Extra known sender IDs (in addition to biller_aliases.sender_ids). Keep empty
+# until verified.
+known_sender_ids: []

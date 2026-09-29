@@ -1,0 +1,7 @@
+﻿{
+  "from": "TNEB Billing <ebill@tneb-billing.example>",
+  "subject": "Electricity bill for service no. 0412",
+  "authentication_results": "mx.google.com; dkim=pass; spf=pass; dmarc=pass",
+  "text": "Dear consumer, your TNEB electricity bill of Rs. 1,840.00 is due on {{date:+1}}. Pay before the due date to avoid a late fee of Rs. 50.",
+  "hours_ago": 2
+}

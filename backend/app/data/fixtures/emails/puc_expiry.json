@@ -1,0 +1,7 @@
+﻿{
+  "from": "Vehicle Alerts <alerts@puc-reminders.example>",
+  "subject": "PUC certificate expiring",
+  "authentication_results": "mx.google.com; dkim=pass; spf=pass; dmarc=pass",
+  "text": "Your PUC (Pollution Under Control) certificate for vehicle TN09AB1234 expires on {{date:+5}}. Renew it at the nearest PUC centre.",
+  "hours_ago": 1
+}

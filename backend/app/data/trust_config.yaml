@@ -1,0 +1,55 @@
+# R-TRUST weights (spec Section 13). Risk 0-100, higher = riskier.
+weights:
+  domain_not_official: 40
+  lookalike_domain: 50
+  dkim_fail: 15
+  spf_fail: 10
+  dmarc_fail: 15
+  all_auth_pass_and_domain_match: -15
+  link_host_mismatch: 15
+  pressure_words: 15
+  behavior_violation: 30
+  no_history: 20
+  amount_deviation: 20
+  timing_off_cycle: 15
+  recent_matching_charge: -20
+  personal_mailbox_sender: 45
+thresholds:
+  verified_max: 25
+  confirm_max: 60
+amount_deviation_pct: 25
+timing_off_days: 10
+lookalike_max_distance: 2
+# Companies send bills from their own domains, never from personal mailboxes.
+# A "bill" from one of these is most likely a person (a friend, a scammer), not a biller.
+personal_mailbox_domains:
+  - gmail.com
+  - googlemail.com
+  - yahoo.com
+  - yahoo.co.in
+  - ymail.com
+  - outlook.com
+  - hotmail.com
+  - live.com
+  - msn.com
+  - icloud.com
+  - me.com
+  - aol.com
+  - rediffmail.com
+  - protonmail.com
+  - proton.me
+  - zoho.com
+  - gmx.com
+  - mail.com
+pressure_phrases:
+  - urgent
+  - immediately
+  - suspended in
+  - will be suspended
+  - account will be
+  - verify your card
+  - verify card
+  - update your card
+  - pay now or
+  - within 24 hours
+  - final notice

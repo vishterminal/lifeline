@@ -1,0 +1,7 @@
+﻿{
+  "from": "Netflix <info@mailer.netflix.com>",
+  "subject": "Your Netflix payment receipt",
+  "authentication_results": "mx.google.com; dkim=pass header.i=@mailer.netflix.com; spf=pass smtp.mailfrom=mailer.netflix.com; dmarc=pass header.from=netflix.com",
+  "text": "Hi Ravi, Payment received: Rs. 649.00 charged on {{date:-8}} for your Netflix Standard plan. Your membership renews monthly.",
+  "hours_ago": 3
+}
