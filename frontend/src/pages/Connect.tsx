@@ -92,10 +92,10 @@ function GmailCard({ src }: { src: GmailSource }) {
           </Button>
         )}
         {src.mode === 'mock' && (
-          <p className="text-xs text-violet-300">Judge mode: Google keys aren't set, so "Connect Gmail" connects a sample inbox with real-world cases — bills, a renewal, a receipt, a newsletter and a phishing email. With keys, the same button opens Google's read-only consent screen for your real inbox.</p>
+          <p className="text-xs text-gold/80">Judge mode: Google keys aren't set, so "Connect Gmail" connects a sample inbox with real-world cases — bills, a renewal, a receipt, a newsletter and a phishing email. With keys, the same button opens Google's read-only consent screen for your real inbox.</p>
         )}
         {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
-        {judge && connected && <SampleInbox items={items} />}
+        {judge && connected && <SampleInbox items={items} synced={!!src.last_sync_at} />}
         {!judge && items && items.length > 0 && (
           <ul className="divide-y divide-line rounded-xl border border-line">
             {items.map((i, n) => (
@@ -143,7 +143,7 @@ function WhatsAppCard({ src }: { src: WhatsAppSource }) {
           <div className="space-y-2 text-sm text-ink-2">
             <p><b>Try it:</b> tap <i>Forward TNEB bill</i> or paste any bill text. Lifeline reads it and replies, exactly as it does on a real phone through the Twilio WhatsApp sandbox.</p>
             <p>Also try <b>WHAT'S DUE</b> and <b>HELP</b>, or send "Hey, dinner tonight?" — it's ignored because it isn't a bill.</p>
-            <p className="text-xs text-violet-300">Live version: a real phone forwards to the sandbox number → Twilio (signature-checked) → the same pipeline → reply on WhatsApp.</p>
+            <p className="text-xs text-gold/80">Live version: a real phone forwards to the sandbox number → Twilio (signature-checked) → the same pipeline → reply on WhatsApp.</p>
           </div>
         </div>
       )}
@@ -236,7 +236,7 @@ function SmsCard({ src }: { src: SmsSource }) {
           <div className="space-y-2 text-sm text-ink-2">
             <p><b>Try it:</b> forward each SMS and watch what Lifeline does. The OTP is dropped instantly and never stored; the personal message is ignored; the bill is tracked.</p>
             <p>Forward the <b>payment debited</b> SMS after confirming the TNEB bill in Review — Lifeline marks the bill paid by itself.</p>
-            <p className="text-xs text-violet-300">Live version: an SMS-forwarder app on an Android phone POSTs to <code>/api/ingest/sms</code> with a secret token — the "Live setup" below generates it and even sends a test SMS through the real webhook.</p>
+            <p className="text-xs text-gold/80">Live version: an SMS-forwarder app on an Android phone POSTs to <code>/api/ingest/sms</code> with a secret token — the "Live setup" below generates it and even sends a test SMS through the real webhook.</p>
           </div>
         </div>
       )}
@@ -362,8 +362,14 @@ export default function Connect() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Connect your sources</h1>
-        <p className="text-ink-2">One-time setup. After this, bills are collected automatically. <b>{done} of 3</b> connected.</p>
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Connect your sources</h1>
+        <p className="mt-1.5 text-ink-2">One-time setup. After this, bills are collected automatically.</p>
+        <div className="mt-4 flex max-w-md items-center gap-3">
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface" role="progressbar" aria-valuemin={0} aria-valuemax={3} aria-valuenow={done} aria-label="Sources connected">
+            <div className="h-full rounded-full bg-gold transition-all" style={{ width: `${(done / 3) * 100}%` }} />
+          </div>
+          <span className="num text-sm font-semibold text-gold">{done} of 3 connected</span>
+        </div>
       </div>
       <GmailCard src={by.GMAIL} />
       <WhatsAppCard src={by.WHATSAPP} />

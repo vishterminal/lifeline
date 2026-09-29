@@ -40,7 +40,7 @@ export default function Proof() {
     <div className="mx-auto max-w-5xl space-y-6 px-4 py-8">
       <div>
         <Link to={auth.get() ? '/connect' : '/login'} className="text-sm text-ink-2 hover:underline">← Back to the app</Link>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight">Proven live</h1>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink sm:text-4xl">Proven <span className="text-gold">live</span></h1>
         <p className="mt-1 max-w-3xl text-ink-2">
           The version you're running from GitHub is in <b>judge mode</b>: without our Google and Twilio keys, Gmail,
           WhatsApp and SMS run on sample messages through the <b>same pipeline</b>. With keys in <code>.env</code>, the

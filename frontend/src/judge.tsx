@@ -27,6 +27,11 @@ export async function runFullDemo(step: (msg: string) => void) {
   await fetch(auth_url, { redirect: 'manual', credentials: 'include' })
   step('Reading bill-like emails (7 in the sample inbox)…')
   const sync = await api<SyncResult>('/sources/gmail/sync', { method: 'POST' })
+  if (sync.fetched === 0 || (sync.items ?? []).every((i) => i.outcome === 'DUPLICATE')) {
+    step('Everything here was already processed (duplicates are skipped on purpose). Press "Reset demo" to replay from scratch.')
+    step('Done.')
+    return
+  }
   step(`Gmail: ${sync.fetched} read · ${sync.needs_review} to review · ${sync.flagged} phishing flagged`)
   step('WhatsApp: forwarding the same TNEB bill…')
   await api('/demo/simulate/whatsapp', { method: 'POST', json: { fixture: 'bill' } })

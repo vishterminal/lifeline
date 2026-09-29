@@ -23,8 +23,8 @@ export default function Bills() {
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="space-y-4 lg:col-span-2">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Bills found</h1>
-          <p className="text-ink-2">Everything collected so far, soonest first. (Ranking by ₹ risk comes next.)</p>
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Bills</h1>
+          <p className="mt-1.5 text-ink-2">Everything Lifeline has collected, soonest first.</p>
         </div>
         {obls.isLoading && <p className="text-muted">Loading…</p>}
         {obls.isError && <Notice tone="error">Couldn't load bills. <button className="underline" onClick={() => obls.refetch()}>Retry</button></Notice>}

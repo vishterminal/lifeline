@@ -144,8 +144,8 @@ export default function Review() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Review</h1>
-        <p className="text-ink-2">Anything we weren't sure about waits here — nothing uncertain is added silently.</p>
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Review</h1>
+        <p className="mt-1.5 text-ink-2">Anything we weren't sure about waits here — nothing uncertain is added silently.</p>
       </div>
       <div className="flex gap-2" role="tablist">
         <button role="tab" aria-selected={tab === 'confirm'} className={tabCls(tab === 'confirm')} onClick={() => setTab('confirm')}>
