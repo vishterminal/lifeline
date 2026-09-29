@@ -56,14 +56,14 @@ export function JudgeBanner() {
   })
   if (!judge) return null
   return (
-    <div className="border-b border-violet-400/30 bg-violet-500/10">
+    <div className="border-b border-gold/20 bg-gradient-to-r from-gold/10 via-surface to-surface">
       <div className="mx-auto max-w-5xl px-4 py-3">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="min-w-0 flex-1 text-sm text-violet-300">
-            <b>🎓 Judge demo mode.</b> No Google/Twilio keys are configured, so Gmail, WhatsApp and SMS run on
+          <div className="min-w-0 flex-1 text-sm text-ink-2">
+            <b className="text-gold">🎓 Judge demo mode.</b> No Google/Twilio keys are configured, so Gmail, WhatsApp and SMS run on
             realistic sample messages through the <b>real</b> pipeline. With keys in <code>.env</code> the same
             screens connect a live Gmail inbox, WhatsApp number and SMS forwarder —{' '}
-            <Link to="/proof" className="font-semibold underline">see it working live</Link>.
+            <Link to="/proof" className="font-semibold text-gold underline">see it working live</Link>.
           </div>
           <div className="flex gap-2">
             <Button onClick={() => run.mutate()} disabled={run.isPending}>{run.isPending ? 'Running…' : '▶ Run full demo'}</Button>
@@ -71,7 +71,7 @@ export function JudgeBanner() {
           </div>
         </div>
         {open && log.length > 0 && (
-          <div className="mt-3 rounded-xl bg-card p-3 text-sm shadow-sm" aria-live="polite">
+          <div className="mt-3 rounded-2xl border border-line bg-card p-4 text-sm" aria-live="polite">
             <ol className="space-y-1">
               {log.map((m, i) => <li key={i}>{m === 'Done.' ? '✅' : '•'} {m}</li>)}
             </ol>

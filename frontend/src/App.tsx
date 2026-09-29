@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, NavLink, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { api, auth, type Confirmation, type Flagged, type User } from './api'
 import { JudgeBanner } from './judge'
+import { Logo } from './ui'
 import AuthCallback from './pages/AuthCallback'
 import Bills from './pages/Bills'
 import CalendarPage from './pages/Calendar'
@@ -26,19 +27,6 @@ const NAV = [
   { to: '/calendar', label: 'Calendar' },
   { to: '/settings', label: 'Settings' },
 ]
-
-export function Logo() {
-  return (
-    <Link to="/overview" className="flex items-center gap-2.5" aria-label="Lifeline home">
-      <span className="grid h-9 w-9 place-items-center rounded-xl bg-gold text-bg shadow-[0_6px_18px_-6px_rgb(255_209_0/0.7)]">
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M3 12h4l2.5-6 4 12 2.5-6H21" />
-        </svg>
-      </span>
-      <span className="text-lg font-bold tracking-tight text-ink">Lifeline</span>
-    </Link>
-  )
-}
 
 function UserMenu({ user }: { user?: User }) {
   const [open, setOpen] = useState(false)

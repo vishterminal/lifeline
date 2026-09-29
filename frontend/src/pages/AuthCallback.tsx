@@ -14,7 +14,7 @@ export default function AuthCallback() {
     if (token) {
       auth.set(token)
       history.replaceState(null, '', '/auth/callback') // drop the token from the URL
-      nav(p.get('next') === '/inbox' ? '/inbox' : '/connect', { replace: true })
+      nav(p.get('next') === '/inbox' ? '/overview' : '/connect', { replace: true })
     } else {
       nav('/login?error=state_mismatch', { replace: true })
     }
