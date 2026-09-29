@@ -73,3 +73,7 @@ body {
 @keyframes drop-in { from { transform: translateY(-120%); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
 .animate-drop-in { animation: drop-in .35s cubic-bezier(.2,.8,.2,1); }
 @keyframes fade-out-up { to { opacity: 0; transform: translateY(-8px); height: 0; padding: 0; margin: 0 } }
+
+/* Native dropdown options: readable on every OS (they ignore the page theme otherwise) */
+select option, select optgroup { background-color: #2A2401; color: #F7F4E8; }
+select option:checked { background-color: #4A4323; color: #FFD100; }

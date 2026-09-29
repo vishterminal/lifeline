@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api, ApiError, auth, type User } from '../api'
@@ -24,34 +23,50 @@ function GoogleIcon() {
   )
 }
 
+function Preview() {
+  return (
+    <div className="relative mt-10 hidden max-w-lg lg:block" aria-hidden="true">
+      <div className="absolute -inset-6 rounded-[2rem] bg-gold/10 blur-3xl" />
+      <div className="glass relative rounded-[var(--radius-card)] p-5">
+        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted">
+          <span>Bills · ranked by ₹ risk</span><span className="text-gold">Live preview</span>
+        </div>
+        <div className="glass-inner mt-3 rounded-2xl p-4">
+          <div className="flex items-start gap-3">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-surface text-lg">🚘</span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline justify-between gap-2"><b>PUC certificate</b><span className="num text-sm font-bold text-gold">₹7,000 at risk</span></div>
+              <div className="text-xs text-muted">Expires in 5 days</div>
+              <div className="mt-2 rounded-lg border border-amber-400/25 bg-amber-500/10 px-2.5 py-1.5 text-xs text-amber-200">⛓ Insurance renewal will be blocked without it</div>
+            </div>
+          </div>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <div className="glass-inner rounded-2xl p-3">
+            <div className="text-xs text-muted">Blocked</div>
+            <div className="mt-0.5 text-sm font-semibold text-red-300">⚠ Fake “Netflix” bill</div>
+            <div className="text-[11px] text-muted">look-alike domain · DMARC fail</div>
+          </div>
+          <div className="glass-inner rounded-2xl p-3">
+            <div className="text-xs text-muted">Arrived by</div>
+            <div className="mt-0.5 text-sm font-semibold">✉️ 💬 📱 → shown once</div>
+            <div className="text-[11px] text-muted">Gmail · WhatsApp · SMS</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Login() {
   const [params] = useSearchParams()
   const nav = useNavigate()
-  const [mode, setMode] = useState<'login' | 'register'>('login')
+  const [mode, setMode] = useState<'register' | 'login'>(params.get('mode') === 'signin' ? 'login' : 'register')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [err, setErr] = useState<string | null>(ERRORS[params.get('error') ?? ''] ?? null)
   const [busy, setBusy] = useState(false)
-  const health = useQuery({
-    queryKey: ['health'],
-    queryFn: () => api<{ connectors: Record<string, string> }>('/health'),
-  })
-  const googleMock = health.data?.connectors.google_login === 'mock'
-
-  async function enterJudgeDemo() {
-    setErr(null)
-    setBusy(true)
-    try {
-      const r = await api<{ token: string; user: User }>('/auth/demo', { method: 'POST' })
-      auth.set(r.token)
-      nav('/overview')
-    } catch (e) {
-      setErr(e instanceof ApiError ? e.message : 'Could not reach the server. Is the backend running on port 8000?')
-    } finally {
-      setBusy(false)
-    }
-  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -62,7 +77,7 @@ export default function Login() {
       const body = mode === 'login' ? { email, password } : { email, password, name: name || undefined }
       const r = await api<{ token: string; user: User }>(path, { method: 'POST', json: body })
       auth.set(r.token)
-      nav(mode === 'register' ? '/connect' : '/overview')
+      nav('/connect') // email accounts open straight into judge demo mode
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : 'Could not reach the server. Is the backend running on port 8000?')
     } finally {
@@ -73,62 +88,42 @@ export default function Login() {
   const input = 'w-full ' + inputCls
 
   return (
-    <div className="min-h-screen bg-bg">
-      <div className="mx-auto grid min-h-screen max-w-6xl items-center gap-10 px-4 py-10 sm:px-6 lg:grid-cols-2">
-        <div className="hidden lg:block">
+    <div className="min-h-screen">
+      <div className="mx-auto grid min-h-screen max-w-6xl items-center gap-12 px-4 py-10 sm:px-6 lg:grid-cols-[1.1fr_1fr] [&>*]:min-w-0">
+        <div>
           <Logo />
-          <h1 className="mt-10 text-5xl font-extrabold leading-[1.05] tracking-tight text-ink">
-            Every bill, renewal and due —<br /><span className="text-gold">in one place.</span>
+          <span className="mt-8 inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">
+            ● Bills · renewals · dues — on autopilot
+          </span>
+          <h1 className="mt-4 text-4xl font-extrabold leading-[1.05] tracking-tight text-ink sm:text-5xl lg:text-6xl">
+            Track everything.<br /><span className="bg-gradient-to-r from-gold to-gold-2 bg-clip-text text-transparent">Miss nothing.</span>
           </h1>
-          <p className="mt-5 max-w-md text-lg text-ink-2">
-            Lifeline collects bills from Gmail, WhatsApp and SMS automatically, checks the sender is genuine,
-            and tells you what needs you — before a late fee does.
+          <p className="mt-5 max-w-xl text-lg text-ink-2">
+            Lifeline reads your bills from Gmail, WhatsApp and SMS, checks the sender is genuine,
+            and ranks what you owe by what missing it would really cost — before a late fee does.
           </p>
-          <ul className="mt-8 space-y-3 text-ink-2">
-            {[
-              ['✉️', 'Reads only bill-like email, read-only'],
-              ['🛡️', 'Blocks fake and phishing bills'],
-              ['🔒', 'Stores extracted details — never your messages'],
-            ].map(([i, t]) => (
-              <li key={t} className="flex items-center gap-3">
-                <span className="grid h-9 w-9 place-items-center rounded-xl border border-line bg-card" aria-hidden="true">{i}</span>{t}
-              </li>
+          <ul className="mt-6 flex flex-wrap gap-2 text-sm">
+            {['✉️ Read-only Gmail', '🛡️ Blocks phishing bills', '₹ Ranked by real risk', '🔒 Never stores your messages'].map((t) => (
+              <li key={t} className="glass rounded-full px-3 py-1.5 text-ink-2">{t}</li>
             ))}
           </ul>
+          <Preview />
         </div>
 
         <div className="mx-auto w-full max-w-md">
-          <div className="mb-6 lg:hidden"><Logo /></div>
-          <button onClick={enterJudgeDemo} disabled={busy}
-            className="mb-2 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gold px-4 py-3 font-semibold text-bg shadow-[0_12px_30px_-12px_rgb(255_209_0/0.8)] hover:bg-gold-2 disabled:opacity-60">
-            🎓 Enter judge demo — no sign-up
-          </button>
-          <p className="mb-4 text-center text-xs text-muted">For judges: a private demo account with sample Gmail, WhatsApp &amp; SMS. Real users sign in with Google below.</p>
-          <div className="rounded-[var(--radius-card)] border border-line bg-card p-6 shadow-[var(--shadow-card)] sm:p-8">
-            <h2 className="text-2xl font-bold tracking-tight">{mode === 'login' ? 'Welcome back' : 'Create your account'}</h2>
-            <p className="mt-1 text-sm text-muted">{mode === 'login' ? 'Sign in to see what needs you.' : 'Takes a minute. Sources can be connected next.'}</p>
-            <a
-              href="/api/auth/google/start"
-              className="mt-6 flex min-h-11 w-full items-center justify-center gap-3 rounded-xl border border-line-strong bg-surface px-4 py-2.5 font-medium text-ink hover:border-gold/50 hover:bg-raised"
-            >
-              <GoogleIcon /> Continue with Google
-            </a>
-            {googleMock && (
-              <p className="mt-2 text-xs text-muted">
-                Judge mode: Google keys aren't set, so this signs you in as a demo Google user. With keys it opens the
-                real Google account picker — <a href="/proof" className="text-gold underline">see it live</a>.
-              </p>
-            )}
+          <div className="glass rounded-[var(--radius-card)] p-6 sm:p-8">
+            <h2 className="text-2xl font-bold tracking-tight">{mode === 'register' ? 'Create new account' : 'Sign in'}</h2>
+            <p className="mt-1 text-sm text-muted">
+              {mode === 'register'
+                ? 'Takes 20 seconds. You’ll land in a ready-to-explore demo with sample Gmail, WhatsApp & SMS.'
+                : 'Pick up where you left off.'}
+            </p>
 
-            <div className="my-6 flex items-center gap-3 text-xs text-muted">
-              <div className="h-px flex-1 bg-line" /> or with email <div className="h-px flex-1 bg-line" />
-            </div>
-
-            <form onSubmit={submit} className="space-y-4">
+            <form onSubmit={submit} className="mt-6 space-y-4">
               {mode === 'register' && (
                 <label className="block">
-                  <span className="text-sm font-medium text-ink-2">Name</span>
-                  <input className={`${input} mt-1`} value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
+                  <span className="text-sm font-medium text-ink-2">Full name</span>
+                  <input className={`${input} mt-1`} value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" required />
                 </label>
               )}
               <label className="block">
@@ -142,18 +137,27 @@ export default function Login() {
                 {mode === 'register' && <span className="text-xs text-muted">At least 8 characters</span>}
               </label>
               {err && <Notice tone="error">{err}</Notice>}
-              <button disabled={busy} className="min-h-11 w-full rounded-xl bg-gold px-4 py-2.5 font-semibold text-bg hover:bg-gold-2 disabled:opacity-60">
-                {busy ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}
+              <button disabled={busy} className="min-h-12 w-full rounded-xl bg-gold px-4 py-3 font-semibold text-bg shadow-[0_12px_30px_-12px_rgb(255_209_0/0.8)] hover:bg-gold-2 disabled:opacity-60">
+                {busy ? 'Please wait…' : mode === 'register' ? 'Create account' : 'Sign in'}
               </button>
             </form>
-            <button
-              className="mt-4 w-full text-sm text-ink-2 hover:text-gold"
-              onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setErr(null) }}
-            >
-              {mode === 'login' ? 'New here? Create an account' : 'Already have an account? Sign in'}
-            </button>
+
+            <div className="my-6 flex items-center gap-3 text-xs text-muted">
+              <div className="h-px flex-1 bg-white/10" /> or <div className="h-px flex-1 bg-white/10" />
+            </div>
+            <a href="/api/auth/google/start"
+              className="glass-inner flex min-h-11 w-full items-center justify-center gap-3 rounded-xl px-4 py-2.5 font-medium text-ink hover:border-gold/50">
+              <GoogleIcon /> Continue with Google
+            </a>
+            <p className="mt-2 text-center text-xs text-muted">Google sign-in connects your real Gmail (read-only).</p>
+
+            <p className="mt-6 text-center text-sm text-ink-2">
+              {mode === 'register'
+                ? <>Already have an account? <button className="font-semibold text-gold hover:underline" onClick={() => { setMode('login'); setErr(null) }}>Sign in</button></>
+                : <>New here? <button className="font-semibold text-gold hover:underline" onClick={() => { setMode('register'); setErr(null) }}>Create new account</button></>}
+            </p>
           </div>
-          <p className="mt-4 text-center text-xs text-muted"><a href="/proof" className="hover:text-gold">See Lifeline working with real Gmail →</a></p>
+          <p className="mt-4 text-center text-xs text-muted"><a href="/proof" className="hover:text-gold">See Lifeline working with a real Gmail inbox →</a></p>
         </div>
       </div>
     </div>

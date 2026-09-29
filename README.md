@@ -20,13 +20,13 @@
 The first run creates a private Python environment and installs dependencies (1–3 minutes). Then it opens **http://localhost:8000**.
 
 **Then:**
-1. Click **🎓 Enter judge demo**. No sign-up is needed.
-2. Click **▶ Run full demo** in the gold banner. It connects a sample Gmail inbox, forwards a bill on WhatsApp, and sends SMS (a bill, an OTP, and a message the two readers disagree on).
-3. Open **Review** and confirm the TNEB bill. It arrived through **three channels** but is shown **once**.
-4. On **Connect → SMS**, forward the **payment debited** SMS. The bill is **marked paid by itself**.
-5. Open **Review → Suspicious** to see the fake "Netflix" email blocked, with the reasons.
-6. Open **Bills**. They're ranked by **₹ risk**, not date: the **PUC certificate (no amount!) is #1**, because missing it blocks the bike-insurance renewal. Click it to see the chain, try **🔮 What if I skip this?**, and **Pay now (simulated)**.
-7. **Reset demo** replays everything from scratch.
+1. On the landing page, fill in **Create new account** (any name, email and password). Email accounts open straight into **judge demo mode**. *Continue with Google* is the real, live path.
+2. On **Connect**, open **🎓 Judge demo → ▶ Run full demo**. It connects a sample Gmail inbox, forwards a bill on WhatsApp, and sends SMS: a bill, an OTP, and a message the two readers disagree on. Or use the phones yourself.
+3. Open **Review** and confirm the TNEB bill. It arrived through **three channels** but is shown **once**. Amounts are pre-filled from what was detected.
+4. Back on **Connect**, the reviewed SMS has left the phone. Forward the **payment debited** SMS and the bill is **marked paid by itself**.
+5. **Review → Suspicious** shows the fake "Netflix" email blocked, with the reasons.
+6. **Bills** is ranked by **₹ risk**, not date. The **PUC certificate (no amount!) is #1**, because missing it blocks the bike-insurance renewal. Click it for the chain, **🔮 What if I skip this?**, and **Pay now (simulated)**.
+7. **Overview** is the money dashboard. **🎓 Judge demo → Reset** replays everything.
 
 ### Judge mode vs live mode
 
@@ -92,12 +92,15 @@ Code: `backend/app/services/pipeline.py`. Every input takes this one path.
 
 ## Tests
 
+Backend: **83 tests**. End to end: `e2e/click_through.py` clicks every button in a real browser (19 steps, 0 console errors).
+
+
 ```bash
 cd backend && .venv/Scripts/python -m pytest      # Windows
 cd backend && .venv/bin/python -m pytest          # macOS / Linux
 ```
 
-**81 tests** cover:
+The backend tests cover:
 - OTP filter and redaction
 - both extractors and reconcile
 - trust scoring, including "a friend sends a fake bill from Gmail"
@@ -128,7 +131,8 @@ See **[docs/SETUP_HUMAN_STEPS.md](docs/SETUP_HUMAN_STEPS.md)** for the Google OA
 ```
 start.bat / start.sh      one-command launchers
 backend/app/              FastAPI app: routers/, services/ (pipeline, trust, extraction, gmail, whatsapp, sms), llm/, data/
-backend/tests/            81 tests
+backend/tests/            83 tests
+e2e/click_through.py      browser click-through of every button
 frontend/src/             React app: pages/ (Overview, Connect, Review, Bills, Calendar, Settings, Proof), judge mode, simulators
 frontend/dist/            built web app, served at http://localhost:8000
 docs/                     setup steps and screenshots

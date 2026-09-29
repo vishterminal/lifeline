@@ -20,10 +20,10 @@ function RequireAuth() {
 }
 
 const NAV = [
-  { to: '/overview', label: 'Overview' },
   { to: '/connect', label: 'Connect' },
   { to: '/inbox', label: 'Review' },
   { to: '/bills', label: 'Bills' },
+  { to: '/overview', label: 'Overview' },
   { to: '/calendar', label: 'Calendar' },
   { to: '/settings', label: 'Settings' },
 ]
@@ -89,7 +89,7 @@ function Shell() {
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2 lg:ml-0">
-            {loc.pathname !== '/overview' && <DemoPill />}
+            {loc.pathname === '/connect' && <DemoPill />}
             <Link to="/inbox" aria-label={`${pending} items need attention`}
               className="relative grid h-11 w-11 place-items-center rounded-full border border-line bg-card text-ink-2 hover:border-gold/40 hover:text-gold">
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

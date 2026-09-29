@@ -5,12 +5,13 @@ import { api, ApiError, day, money, pretty, when, type Confirmation, type Flagge
 import { Badge, Button, inputCls, Notice, OriginBadge, TrustBadge } from '../ui'
 
 const REASON_TEXT: Record<string, string> = {
-  EXTRACTION_MISMATCH: 'Our two readers disagreed — pick the right value.',
+  EXTRACTION_MISMATCH: "Our two readers disagreed. We pre-filled the AI reader's value — tap the other one if that's the right one.",
   LOW_CONFIDENCE: "We weren't sure we read this correctly.",
   NEW_BILLER: 'First bill from this biller — is it genuine?',
   MEDIUM_TRUST: "We couldn't verify the sender.",
   MISSING_FIELDS: 'Some details are missing — please fill them in.',
   RECURRING_CANDIDATE: 'Looks like a subscription — confirm the next renewal.',
+  MANUAL_ENTRY: 'You typed this in — check the details and confirm.',
 }
 const TYPES = ['OTHER', 'ELECTRICITY', 'WATER', 'GAS', 'PHONE_INTERNET', 'INSURANCE_VEHICLE', 'INSURANCE_OTHER', 'PUC',
   'DRIVING_LICENCE', 'VEHICLE_OTHER', 'SUBSCRIPTION', 'LOAN_EMI', 'APPOINTMENT', 'DOCUMENT_OTHER']
@@ -23,16 +24,14 @@ function ConfirmationCard({ c }: { c: Confirmation }) {
   const rules = c.draft.candidates?.rules as Record<string, string> | undefined
   const [form, setForm] = useState({
     biller: f.biller ?? '', type: f.type ?? 'OTHER',
-    amount: mismatches.includes('amount') ? '' : (f.amount ?? ''),
-    due_date: mismatches.includes('due_date') ? '' : (f.due_date ?? ''),
+    // Pre-filled from what was detected (the AI reader's value when the two readers disagree);
+    // the other reader's value is one tap away and nothing is saved until you press Confirm.
+    amount: f.amount ?? '',
+    due_date: f.due_date ?? '',
   })
   const [err, setErr] = useState<string | null>(null)
   const resolve = useMutation({
     mutationFn: (action: 'confirm' | 'reject') => {
-      if (action === 'confirm') {
-        const missing = mismatches.map((m) => (m === 'biller_norm' ? 'biller' : m)).filter((k) => !form[k as keyof typeof form])
-        if (missing.length) return Promise.reject(new ApiError(422, 'CHOOSE', `Our two readers disagreed on the ${missing.map(pretty).join(' and ').toLowerCase()} — tap one of the two values above (or type the right one), then Confirm.`))
-      }
       const fields: Record<string, unknown> = {}
       if (action === 'confirm') {
         if (form.biller !== (f.biller ?? '') || mismatches.includes('biller_norm')) fields.biller = form.biller
@@ -141,6 +140,8 @@ function FlaggedCard({ item }: { item: Flagged }) {
 export default function Review() {
   const [tab, setTab] = useState<'confirm' | 'suspicious'>('confirm')
   const confs = useQuery({ queryKey: ['confirmations'], queryFn: () => api<Confirmation[]>('/confirmations'), refetchInterval: 30_000 })
+  // Demo items first, then your real ones.
+  const ordered = [...(confs.data ?? [])].sort((a, b) => (a.origin === b.origin ? 0 : a.origin === 'DEMO' ? -1 : 1))
   const flagged = useQuery({ queryKey: ['flagged'], queryFn: () => api<Flagged[]>('/flagged'), refetchInterval: 30_000 })
   const tabCls = (on: boolean) => `min-h-11 rounded-full px-5 py-2 text-sm font-medium transition ${on ? 'bg-gold text-bg font-semibold shadow-[0_6px_18px_-8px_rgb(255_209_0/0.8)]' : 'glass text-ink-2 hover:text-ink'}`
   const active = tab === 'confirm' ? confs : flagged
@@ -170,7 +171,14 @@ export default function Review() {
         <div className="glass rounded-[var(--radius-card)] p-8 text-center text-ink-2">No suspicious messages.</div>
       )}
       <div className="space-y-4">
-        {tab === 'confirm' && confs.data?.map((c) => <ConfirmationCard key={c.id} c={c} />)}
+        {tab === 'confirm' && ordered.map((c, i) => (
+          <div key={c.id}>
+            {c.origin === 'REAL' && (i === 0 || ordered[i - 1].origin !== 'REAL') && ordered.some((x) => x.origin === 'DEMO') && (
+              <h2 className="mb-3 mt-8 text-sm font-semibold uppercase tracking-wider text-muted">Your real items</h2>
+            )}
+            <ConfirmationCard c={c} />
+          </div>
+        ))}
         {tab === 'suspicious' && flagged.data?.map((f) => <FlaggedCard key={f.id} item={f} />)}
       </div>
     </div>

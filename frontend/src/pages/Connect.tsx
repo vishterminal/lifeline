@@ -2,12 +2,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
-  api, ApiError, when, type GmailSource, type PipelineResult, type SmsSource, type Source, type SyncItem,
+  api, ApiError, pretty, when, type GmailSource, type PipelineResult, type SmsSource, type Source, type SyncItem,
   type SyncResult, type WhatsAppSource,
 } from '../api'
 import { useJudgeMode } from '../judge'
 import { OutcomeChip, SampleInbox, SmsSimulator, WhatsAppSimulator } from '../simulators'
-import { Button, Card, CopyField, Notice, OUTCOME_TEXT, outcomeTone, StatusBadge } from '../ui'
+import { Button, Card, CopyField, inputCls, Notice, OUTCOME_TEXT, outcomeTone, StatusBadge } from '../ui'
 
 function useInvalidate() {
   const qc = useQueryClient()
@@ -283,72 +283,109 @@ function SmsCard({ src }: { src: SmsSource }) {
   )
 }
 
-// --- Upload / manual / statement ------------------------------------------------------------
-function OtherInputs() {
-  const invalidate = useInvalidate()
-  const [upRes, setUpRes] = useState<PipelineResult | null>(null)
-  const [upErr, setUpErr] = useState<string | null>(null)
-  const [stRes, setStRes] = useState<string | null>(null)
-  const [manual, setManual] = useState({ biller: '', type: 'OTHER', amount: '', due_date: '' })
-  const [manRes, setManRes] = useState<string | null>(null)
+// --- Upload / manual / statement: three separate cards ------------------------------------------
+const TYPES = ['OTHER', 'ELECTRICITY', 'WATER', 'GAS', 'PHONE_INTERNET', 'INSURANCE_VEHICLE', 'INSURANCE_OTHER', 'PUC',
+  'DRIVING_LICENCE', 'SUBSCRIPTION', 'LOAN_EMI', 'APPOINTMENT']
 
+function UploadCard() {
+  const invalidate = useInvalidate()
+  const [res, setRes] = useState<PipelineResult | null>(null)
+  const [err, setErr] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
   async function upload(file: File) {
-    setUpErr(null); setUpRes(null)
+    setErr(null); setRes(null); setBusy(true)
     const fd = new FormData(); fd.append('file', file)
-    try { setUpRes(await api<PipelineResult>('/ingest/upload', { method: 'POST', body: fd })); invalidate() }
-    catch (e) { setUpErr(errText(e)) }
+    try { setRes(await api<PipelineResult>('/ingest/upload', { method: 'POST', body: fd })); invalidate() }
+    catch (e) { setErr(errText(e)) } finally { setBusy(false) }
   }
+  return (
+    <Card icon="📷" title="Photo or PDF of a bill" subtitle="Snap or upload a bill that didn't arrive by email, WhatsApp or SMS. Up to 10 MB.">
+      <div className="space-y-3">
+        <input type="file" accept="application/pdf,image/png,image/jpeg" aria-label="Upload bill" disabled={busy}
+          onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} className="block w-full" />
+        {busy && <p className="text-sm text-muted">Reading…</p>}
+        <ResultNote r={res} />
+        {err && <Notice tone="error">{err}</Notice>}
+      </div>
+    </Card>
+  )
+}
+
+function TypeItInCard() {
+  const invalidate = useInvalidate()
+  const empty = { biller: '', type: 'OTHER', amount: '', due_date: '' }
+  const [manual, setManual] = useState(empty)
+  const [ok, setOk] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const add = useMutation({
+    mutationFn: () => api('/ingest/manual', { method: 'POST', json: { ...manual, amount: manual.amount || undefined, review: true } }),
+    onSuccess: () => { setOk(true); setErr(null); setManual(empty); invalidate() },
+    onError: (e) => { setOk(false); setErr(errText(e)) },
+  })
+  const label = 'block text-sm font-medium text-ink-2'
+  return (
+    <Card icon="⌨️" title="Type it in" subtitle="Add any bill by hand. It goes to Review for a final check, then into your bills.">
+      <form className="grid grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-w-0" onSubmit={(e) => { e.preventDefault(); setOk(false); add.mutate() }}>
+        <label className={`${label} sm:col-span-2`}>Biller
+          <input required placeholder="e.g. BESCOM, Airtel, LIC" className={`${inputCls} mt-1 w-full`} value={manual.biller}
+            onChange={(e) => setManual({ ...manual, biller: e.target.value })} />
+        </label>
+        <label className={label}>Amount (₹)
+          <input placeholder="e.g. 1250" inputMode="decimal" className={`${inputCls} mt-1 w-full`} value={manual.amount}
+            onChange={(e) => setManual({ ...manual, amount: e.target.value })} />
+        </label>
+        <label className={label}>Due date
+          <input required type="date" className={`${inputCls} mt-1 w-full`} value={manual.due_date}
+            onChange={(e) => setManual({ ...manual, due_date: e.target.value })} />
+        </label>
+        <label className={`${label} sm:col-span-2`}>Type
+          <select className={`${inputCls} mt-1 w-full`} value={manual.type} onChange={(e) => setManual({ ...manual, type: e.target.value })}>
+            {TYPES.map((t) => <option key={t} value={t}>{pretty(t)}</option>)}
+          </select>
+        </label>
+        <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
+          <Button type="submit" disabled={add.isPending}>{add.isPending ? 'Adding…' : 'Add bill'}</Button>
+          {ok && <Notice tone="ok">Sent to Review — <Link to="/inbox" className="font-semibold underline">confirm it there →</Link></Notice>}
+          {err && <Notice tone="error">{err}</Notice>}
+        </div>
+      </form>
+    </Card>
+  )
+}
+
+function StatementCard() {
+  const invalidate = useInvalidate()
+  const [res, setRes] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null)
   async function statement(file: File) {
-    setStRes(null)
+    setRes(null)
     const fd = new FormData(); fd.append('file', file)
     try {
       const r = await api<{ charges_found: number; recurring_found: number }>('/ingest/statement', { method: 'POST', body: fd })
-      setStRes(`Found ${r.charges_found} payment(s) and ${r.recurring_found} subscription(s).`); invalidate()
-    } catch (e) { setStRes(errText(e)) }
+      setRes({ tone: 'ok', text: `Found ${r.charges_found} payment(s) and ${r.recurring_found} subscription(s).` }); invalidate()
+    } catch (e) { setRes({ tone: 'error', text: errText(e) }) }
   }
-  async function addManual(e: React.FormEvent) {
-    e.preventDefault()
-    try {
-      await api('/ingest/manual', { method: 'POST', json: { ...manual, amount: manual.amount || undefined } })
-      setManRes('Added to your bills.'); setManual({ biller: '', type: 'OTHER', amount: '', due_date: '' }); invalidate()
-    } catch (e) { setManRes(errText(e)) }
-  }
-  const field = 'min-h-11 rounded-lg border border-line px-3 py-2 text-sm'
-
   return (
-    <Card icon="📎" title="Other ways to add" subtitle="Fallbacks when a bill didn't come through automatically.">
-      <div className="grid grid-cols-1 [&>*]:min-w-0 gap-5 md:grid-cols-3">
-        <div className="space-y-2">
-          <h3 className="text-sm font-semibold">Photo or PDF of a bill</h3>
-          <input type="file" accept="application/pdf,image/png,image/jpeg" aria-label="Upload bill"
-            onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} className="block w-full text-sm" />
-          <p className="text-xs text-muted">Up to 10 MB.</p>
-          <ResultNote r={upRes} />
-          {upErr && <Notice tone="error">{upErr}</Notice>}
-        </div>
-        <form className="space-y-2" onSubmit={addManual}>
-          <h3 className="text-sm font-semibold">Type it in</h3>
-          <input required placeholder="Biller (e.g. BESCOM)" aria-label="Biller" className={`${field} w-full`} value={manual.biller} onChange={(e) => setManual({ ...manual, biller: e.target.value })} />
-          <div className="flex gap-2">
-            <input placeholder="Amount ₹" inputMode="decimal" aria-label="Amount" className={`${field} w-1/2`} value={manual.amount} onChange={(e) => setManual({ ...manual, amount: e.target.value })} />
-            <input required type="date" aria-label="Due date" className={`${field} w-1/2`} value={manual.due_date} onChange={(e) => setManual({ ...manual, due_date: e.target.value })} />
-          </div>
-          <select aria-label="Type" className={`${field} w-full`} value={manual.type} onChange={(e) => setManual({ ...manual, type: e.target.value })}>
-            {['OTHER', 'ELECTRICITY', 'WATER', 'GAS', 'PHONE_INTERNET', 'INSURANCE_VEHICLE', 'INSURANCE_OTHER', 'PUC', 'DRIVING_LICENCE', 'SUBSCRIPTION', 'LOAN_EMI', 'APPOINTMENT'].map((t) =>
-              <option key={t} value={t}>{t.replace(/_/g, ' ').toLowerCase()}</option>)}
-          </select>
-          <Button type="submit" variant="secondary" className="w-full">Add bill</Button>
-          {manRes && <p className="text-xs text-ink-2">{manRes}</p>}
-        </form>
-        <div className="space-y-2">
-          <h3 className="text-sm font-semibold">Bank statement (CSV)</h3>
-          <input type="file" accept=".csv,application/pdf" aria-label="Upload bank statement"
-            onChange={(e) => e.target.files?.[0] && statement(e.target.files[0])} className="block w-full text-sm" />
-          <p className="text-xs text-muted">Finds repeating payments like Netflix. Only merchant, amount and date are kept.</p>
-          {stRes && <Notice tone="info">{stRes}</Notice>}
-        </div>
+    <Card icon="🏦" title="Bank statement (CSV)" subtitle="Finds repeating payments like Netflix or insurance premiums. Only merchant, amount and date are kept.">
+      <div className="space-y-3">
+        <input type="file" accept=".csv,application/pdf" aria-label="Upload bank statement"
+          onChange={(e) => e.target.files?.[0] && statement(e.target.files[0])} className="block w-full" />
+        {res && <Notice tone={res.tone}>{res.text}</Notice>}
       </div>
     </Card>
+  )
+}
+
+function OtherInputs() {
+  return (
+    <section className="space-y-4 pt-2">
+      <div>
+        <h2 className="text-xl font-semibold">Other ways to add</h2>
+        <p className="text-sm text-muted">Fallbacks when a bill didn't come through automatically.</p>
+      </div>
+      <UploadCard />
+      <TypeItInCard />
+      <StatementCard />
+    </section>
   )
 }
 
@@ -357,7 +394,7 @@ export default function Connect() {
   if (sources.isLoading) return <p className="text-muted">Loading…</p>
   if (sources.isError) return <Notice tone="error">Couldn't load your sources. <button className="underline" onClick={() => sources.refetch()}>Retry</button></Notice>
   const by = Object.fromEntries((sources.data ?? []).map((s) => [s.kind, s])) as { GMAIL: GmailSource; SMS: SmsSource; WHATSAPP: WhatsAppSource }
-  const done = [by.GMAIL.status === 'CONNECTED', by.SMS.status === 'CONNECTED', !!by.WHATSAPP.phone_e164].filter(Boolean).length
+  const done = [by.GMAIL.status === 'CONNECTED', by.SMS.status === 'CONNECTED', by.WHATSAPP.status === 'CONNECTED' || !!by.WHATSAPP.phone_e164].filter(Boolean).length
 
   return (
     <div className="space-y-5">

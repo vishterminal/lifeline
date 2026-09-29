@@ -165,6 +165,11 @@ export function SmsSimulator() {
   const [fwd, setFwd] = useState<Forwarded>({})
   const [flash, setFlash] = useFlash<{ title: string; text: string }>()
   useEffect(() => { setFwd(loadForwarded(uid)) }, [uid])
+  useEffect(() => {
+    const onReset = () => setFwd({})
+    window.addEventListener('lifeline:demo-reset', onReset)
+    return () => window.removeEventListener('lifeline:demo-reset', onReset)
+  }, [])
   const save = (next: Forwarded) => {
     setFwd(next)
     try { if (uid) localStorage.setItem(storeKey(uid), JSON.stringify(next)) } catch { /* private mode */ }
@@ -253,6 +258,7 @@ export function SmsSimulator() {
 
 export function clearSmsSimulatorState() {
   try { Object.keys(localStorage).filter((k) => k.startsWith('lifeline.sms.')).forEach((k) => localStorage.removeItem(k)) } catch { /* ignore */ }
+  window.dispatchEvent(new Event('lifeline:demo-reset'))
 }
 
 // ---- Gmail sample inbox -------------------------------------------------------------------------------

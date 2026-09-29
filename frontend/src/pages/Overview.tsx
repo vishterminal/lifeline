@@ -4,7 +4,6 @@ import {
   api, day, money, pretty, when, type Confirmation, type Flagged, type IngestEvent, type Obligation, type RankedBill, type Source, type User,
 } from '../api'
 import { BarChart, type BarDatum } from '../charts'
-import { JudgeBanner } from '../judge'
 import { Badge, Card, EmptyState, OUTCOME_TEXT, OriginBadge, PageHeader, StatusBadge } from '../ui'
 
 const OPEN = new Set(['OPEN', 'OVERDUE'])
@@ -58,17 +57,15 @@ export default function Overview() {
   const riskOpen = (ranked.data ?? []).filter((b) => OPEN.has(b.status))
   const atRisk = riskOpen.reduce((s, b) => s + Number(b.consequence.direct ?? 0), 0)
   const top = riskOpen[0]
-  const firstName = (user?.name || user?.email?.split('@')[0] || '').split(' ')[0]
 
   return (
     <div>
       <PageHeader
-        title={firstName ? `Welcome back, ${firstName}` : 'Overview'}
+        title="Overview"
         subtitle="Everything you owe, in one place — collected automatically from Gmail, WhatsApp and SMS."
         actions={<Link to="/connect" className="inline-flex min-h-11 items-center rounded-xl border border-line-strong bg-surface/60 px-4 text-sm font-medium text-ink hover:border-gold/50">+ Add a source</Link>}
       />
 
-      <JudgeBanner />
       <div className="grid grid-cols-1 [&>*]:min-w-0 gap-5 lg:grid-cols-12">
         {/* LEFT: My money */}
         <div className="space-y-5 lg:col-span-3">
