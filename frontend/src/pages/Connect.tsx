@@ -92,7 +92,7 @@ function GmailCard({ src }: { src: GmailSource }) {
           </Button>
         )}
         {src.mode === 'mock' && (
-          <p className="text-xs text-gold/80">Judge mode: Google keys aren't set, so "Connect Gmail" connects a sample inbox with real-world cases — bills, a renewal, a receipt, a newsletter and a phishing email. With keys, the same button opens Google's read-only consent screen for your real inbox.</p>
+          <p className="text-xs text-gold/80">Judge demo: "Connect Gmail" connects a sample inbox with real-world cases — bills, a renewal, a receipt, a newsletter and a phishing email. For real accounts the same button opens Google's read-only consent screen.</p>
         )}
         {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
         {judge && connected && <SampleInbox items={items} synced={!!src.last_sync_at} />}
@@ -194,7 +194,7 @@ function WhatsAppCard({ src }: { src: WhatsAppSource }) {
       </ol>
       </details>
       {err && <div className="mt-3"><Notice tone="error">{err}</Notice></div>}
-      {src.mode === 'mock' && <p className="mt-3 text-xs text-amber-300">Demo mode: Twilio keys aren't set. Real forwarding needs the Twilio sandbox webhook pointed at {src.webhook_url}.</p>}
+      {!judge && src.mode === 'mock' && <p className="mt-3 text-xs text-amber-300">Twilio keys aren't set. Real forwarding needs the Twilio sandbox webhook pointed at {src.webhook_url}.</p>}
     </Card>
   )
 }

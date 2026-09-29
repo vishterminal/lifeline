@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api, ApiError, day, money, pretty, when, type Confirmation, type Flagged } from '../api'
-import { Badge, Button, Notice, OriginBadge, TrustBadge } from '../ui'
+import { Badge, Button, inputCls, Notice, OriginBadge, TrustBadge } from '../ui'
 
 const REASON_TEXT: Record<string, string> = {
   EXTRACTION_MISMATCH: 'Our two readers disagreed — pick the right value.',
@@ -43,10 +43,10 @@ function ConfirmationCard({ c }: { c: Confirmation }) {
   })
 
   const pick = (key: 'amount' | 'due_date', v: string | undefined) => v && setForm({ ...form, [key]: v })
-  const input = 'min-h-11 w-full rounded-lg border border-line px-3 py-2 text-sm'
+  const input = 'w-full ' + inputCls
 
   return (
-    <article className="rounded-2xl border border-amber-400/30 bg-card p-5 shadow-sm">
+    <article className="glass glass-hover rounded-[var(--radius-card)] !border-amber-400/25 p-5">
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="amber">{pretty(c.reason)}</Badge>
         <OriginBadge origin={c.origin} />
@@ -117,7 +117,7 @@ function FlaggedCard({ item }: { item: Flagged }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['flagged'] }),
   })
   return (
-    <article className="rounded-2xl border border-red-400/30 bg-card p-5 shadow-sm">
+    <article className="glass glass-hover rounded-[var(--radius-card)] !border-red-400/25 p-5">
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="red">⚠ Suspicious — don't click its links</Badge>
         <OriginBadge origin={item.origin} />
@@ -138,7 +138,7 @@ export default function Review() {
   const [tab, setTab] = useState<'confirm' | 'suspicious'>('confirm')
   const confs = useQuery({ queryKey: ['confirmations'], queryFn: () => api<Confirmation[]>('/confirmations'), refetchInterval: 30_000 })
   const flagged = useQuery({ queryKey: ['flagged'], queryFn: () => api<Flagged[]>('/flagged'), refetchInterval: 30_000 })
-  const tabCls = (on: boolean) => `min-h-11 rounded-lg px-4 py-2 text-sm font-medium ${on ? 'bg-gold text-bg font-semibold' : 'bg-card border border-line'}`
+  const tabCls = (on: boolean) => `min-h-11 rounded-full px-5 py-2 text-sm font-medium transition ${on ? 'bg-gold text-bg font-semibold shadow-[0_6px_18px_-8px_rgb(255_209_0/0.8)]' : 'glass text-ink-2 hover:text-ink'}`
   const active = tab === 'confirm' ? confs : flagged
 
   return (
@@ -158,12 +158,12 @@ export default function Review() {
       {active.isLoading && <p className="text-muted">Loading…</p>}
       {active.isError && <Notice tone="error">Couldn't load. <button className="underline" onClick={() => active.refetch()}>Retry</button></Notice>}
       {tab === 'confirm' && confs.data?.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-line p-8 text-center text-ink-2">
+        <div className="glass rounded-[var(--radius-card)] p-8 text-center text-ink-2">
           All clear. New items appear here as they arrive. <Link to="/connect" className="font-semibold underline">Connect a source</Link>
         </div>
       )}
       {tab === 'suspicious' && flagged.data?.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-line p-8 text-center text-ink-2">No suspicious messages.</div>
+        <div className="glass rounded-[var(--radius-card)] p-8 text-center text-ink-2">No suspicious messages.</div>
       )}
       <div className="space-y-4">
         {tab === 'confirm' && confs.data?.map((c) => <ConfirmationCard key={c.id} c={c} />)}

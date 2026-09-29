@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, NavLink, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { api, auth, type Confirmation, type Flagged, type User } from './api'
-import { JudgeBanner } from './judge'
+import { DemoPill } from './judge'
 import { Logo } from './ui'
 import AuthCallback from './pages/AuthCallback'
 import Bills from './pages/Bills'
@@ -77,7 +77,7 @@ function Shell() {
 
   return (
     <div className="min-h-screen overflow-x-clip bg-bg">
-      <header className="sticky top-0 z-20 border-b border-line bg-bg/85 backdrop-blur-md">
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-bg/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6">
           <Logo />
           <nav aria-label="Main" className="mx-auto hidden items-center gap-1 rounded-full border border-line bg-surface/70 p-1 lg:flex">
@@ -89,6 +89,7 @@ function Shell() {
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2 lg:ml-0">
+            {loc.pathname !== '/overview' && <DemoPill />}
             <Link to="/inbox" aria-label={`${pending} items need attention`}
               className="relative grid h-11 w-11 place-items-center rounded-full border border-line bg-card text-ink-2 hover:border-gold/40 hover:text-gold">
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -111,7 +112,6 @@ function Shell() {
           </div>
         </nav>
       </header>
-      <JudgeBanner />
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <Outlet />
       </main>

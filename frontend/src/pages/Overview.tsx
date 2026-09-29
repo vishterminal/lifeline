@@ -4,6 +4,7 @@ import {
   api, day, money, pretty, when, type Confirmation, type Flagged, type IngestEvent, type Obligation, type RankedBill, type Source, type User,
 } from '../api'
 import { BarChart, type BarDatum } from '../charts'
+import { JudgeBanner } from '../judge'
 import { Badge, Card, EmptyState, OUTCOME_TEXT, OriginBadge, PageHeader, StatusBadge } from '../ui'
 
 const OPEN = new Set(['OPEN', 'OVERDUE'])
@@ -67,6 +68,7 @@ export default function Overview() {
         actions={<Link to="/connect" className="inline-flex min-h-11 items-center rounded-xl border border-line-strong bg-surface/60 px-4 text-sm font-medium text-ink hover:border-gold/50">+ Add a source</Link>}
       />
 
+      <JudgeBanner />
       <div className="grid grid-cols-1 [&>*]:min-w-0 gap-5 lg:grid-cols-12">
         {/* LEFT: My money */}
         <div className="space-y-5 lg:col-span-3">
@@ -79,7 +81,7 @@ export default function Overview() {
             </div>
             <svg className="absolute -bottom-6 -right-6 h-28 w-28 opacity-15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M3 12h4l2.5-6 4 12 2.5-6H21" /></svg>
           </div>
-          <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-card)] border border-line bg-card">
+          <ul className="glass divide-y divide-white/[0.07] overflow-hidden rounded-[var(--radius-card)]">
             {[
               ['Penalties at stake', money(atRisk), 'Late fees + lapse costs if missed · estimated'],
               ['Upcoming bills · 30 days', money(due30), `${next30.length} bill${next30.length === 1 ? '' : 's'}`],
@@ -88,7 +90,7 @@ export default function Overview() {
               ['Subscriptions / month', money(monthlySubs), `${subs.length} recurring`],
               ['Paid & closed', String(paid.length), 'Marked paid (incl. auto-detected)'],
             ].map(([k, v, hint]) => (
-              <li key={k} className="px-4 py-3.5">
+              <li key={k} className="row-hover px-4 py-3.5">
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="text-sm text-ink-2">{k}</span>
                   <span className={`num text-base font-bold ${k === 'Left after bills' && afterBills != null && afterBills < 0 ? 'text-red-300' : 'text-ink'}`}>{v}</span>

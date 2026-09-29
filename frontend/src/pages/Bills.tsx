@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api, ApiError, day, money, pretty, when, type IngestEvent, type RankedBill, type WhatIf } from '../api'
-import { Badge, Button, EmptyState, Notice, OriginBadge, OUTCOME_TEXT, PageHeader, TrustBadge } from '../ui'
+import { api, ApiError, day, money, pretty, type RankedBill, type WhatIf } from '../api'
+import { Badge, Button, EmptyState, Notice, OriginBadge, PageHeader, TrustBadge } from '../ui'
 
 const ICON: Record<string, string> = {
   ELECTRICITY: '⚡', WATER: '💧', GAS: '🔥', PHONE_INTERNET: '📶', INSURANCE_VEHICLE: '🏍️', INSURANCE_OTHER: '🛡️',
@@ -36,8 +36,8 @@ function PayDialog({ bill, onClose }: { bill: RankedBill; onClose: () => void })
     onSuccess: () => { setDone(true); ['bills', 'obligations'].forEach((k) => qc.invalidateQueries({ queryKey: [k] })) },
   })
   return (
-    <div className="fixed inset-0 z-40 grid place-items-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-labelledby="pay-title">
-      <div className="w-full max-w-md rounded-[var(--radius-card)] border border-line bg-card p-6 shadow-[var(--shadow-card)]">
+    <div className="fixed inset-0 z-40 grid place-items-center bg-black/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="pay-title">
+      <div className="glass w-full max-w-md rounded-[var(--radius-card)] p-6">
         <div className="mb-4 rounded-xl border border-gold/40 bg-gold/10 px-3 py-2 text-sm font-semibold text-gold">⚠ Simulated — no real money moves</div>
         <h2 id="pay-title" className="text-xl font-semibold">{done ? 'Payment simulated' : `Pay ${bill.biller_raw ?? 'bill'}`}</h2>
         <div className="num mt-2 text-3xl font-bold text-gold">{money(bill.amount)}</div>
@@ -102,7 +102,7 @@ function BillDetail({ bill }: { bill: RankedBill }) {
       <div className="md:col-span-2">
         <Button variant="secondary" onClick={() => wi.refetch()} disabled={wi.isFetching}>{wi.isFetching ? 'Simulating…' : '🔮 What if I skip this?'}</Button>
         {wi.data && (
-          <div className="mt-3 rounded-2xl border border-line bg-surface/60 p-4">
+          <div className="glass-inner mt-3 rounded-2xl p-4">
             <div className="text-sm">If you skip <b>{wi.data.skipped}</b>, it could cost <b className="num text-gold">{money(wi.data.total)}</b> <VerifiedBadge label={wi.data.label} /></div>
             <ol className="mt-2 space-y-1.5 text-sm">
               {wi.data.timeline_effects.map((e, i) => (
@@ -129,24 +129,23 @@ export default function Bills() {
   const [sort, setSort] = useState<'risk' | 'date'>('risk')
   const [openId, setOpenId] = useState<string | null>(null)
   const bills = useQuery({ queryKey: ['bills', sort], queryFn: () => api<RankedBill[]>(`/bills?sort=${sort}`), refetchInterval: 30_000 })
-  const events = useQuery({ queryKey: ['events'], queryFn: () => api<IngestEvent[]>('/ingest-events?limit=12'), refetchInterval: 30_000 })
   const openBills = (bills.data ?? []).filter((b) => OPEN.has(b.status))
   // Sum each bill's own penalty once; knock-on effects are shown per bill (summing totals would double-count chains).
   const atRisk = openBills.reduce((s, b) => s + Number(b.consequence.direct ?? 0), 0)
   const tabCls = (on: boolean) => `min-h-10 rounded-full px-4 text-sm font-medium ${on ? 'bg-gold text-bg' : 'text-ink-2 hover:text-ink'}`
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 [&>*]:min-w-0">
-      <div className="lg:col-span-2">
+    <div className="mx-auto max-w-5xl">
+      <div>
         <PageHeader title="Bills" subtitle="Ranked by what missing them would really cost you — not just by date."
           actions={
-            <div className="flex rounded-full border border-line bg-surface/70 p-1" role="tablist" aria-label="Sort bills">
+            <div className="glass flex rounded-full p-1" role="tablist" aria-label="Sort bills">
               <button role="tab" aria-selected={sort === 'risk'} className={tabCls(sort === 'risk')} onClick={() => setSort('risk')}>By ₹ risk</button>
               <button role="tab" aria-selected={sort === 'date'} className={tabCls(sort === 'date')} onClick={() => setSort('date')}>By date</button>
             </div>
           } />
         {openBills.length > 0 && (
-          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-gold/30 bg-gold/10 px-4 py-3 text-sm">
+          <div className="glass mb-4 flex flex-wrap items-center gap-3 rounded-2xl !border-gold/30 px-4 py-3 text-sm">
             <span className="text-ink-2">Penalties at stake across {openBills.length} open bill{openBills.length === 1 ? '' : 's'}:</span>
             <b className="num text-lg text-gold">{money(atRisk)}</b>
             <VerifiedBadge label={openBills.every((b) => b.consequence.label === 'VERIFIED') ? 'VERIFIED' : 'ESTIMATED'} />
@@ -160,9 +159,9 @@ export default function Bills() {
             const isOpen = OPEN.has(o.status)
             const expanded = openId === o.id
             return (
-              <li key={o.id} className={`rounded-[var(--radius-card)] border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5 ${isOpen ? (o.consequence.tier === 'HIGH' ? 'border-red-400/30' : 'border-line') : 'border-line opacity-70'}`}>
+              <li key={o.id} className={`glass glass-hover rounded-[var(--radius-card)] p-4 sm:p-5 ${isOpen ? (o.consequence.tier === 'HIGH' ? '!border-red-400/30' : '') : 'opacity-60'}`}>
                 <button className="flex w-full items-start gap-3 text-left" onClick={() => setOpenId(expanded ? null : o.id)} aria-expanded={expanded}>
-                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-line bg-surface text-xl" aria-hidden="true">{ICON[o.type] ?? '📄'}</div>
+                  <div className="glass-inner grid h-11 w-11 shrink-0 place-items-center rounded-xl text-xl" aria-hidden="true">{ICON[o.type] ?? '📄'}</div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-baseline gap-x-3">
                       <h2 className="font-semibold">{o.biller_raw ?? o.biller_norm ?? 'Bill'}</h2>
@@ -201,19 +200,6 @@ export default function Bills() {
           })}
         </ul>
       </div>
-      <aside>
-        <h2 className="mb-1 text-lg font-semibold">Recent activity</h2>
-        <p className="mb-3 text-xs text-muted">What happened to each incoming message. Message text is never stored.</p>
-        <ul className="space-y-2">
-          {events.data?.map((e) => (
-            <li key={e.id} className="rounded-xl border border-line bg-card px-3 py-2 text-sm">
-              <div className="flex justify-between gap-2"><b>{pretty(e.source_kind)}</b><span className="text-xs text-muted">{when(e.received_at)}</span></div>
-              <div className="text-ink-2">{OUTCOME_TEXT[e.outcome] ?? e.outcome}</div>
-            </li>
-          ))}
-          {events.data?.length === 0 && <li className="text-sm text-muted">No messages yet.</li>}
-        </ul>
-      </aside>
     </div>
   )
 }

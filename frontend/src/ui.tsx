@@ -8,11 +8,11 @@ export function Card({ title, subtitle, icon, status, children, className = '' }
   title?: string; subtitle?: string; icon?: ReactNode; status?: ReactNode; children: ReactNode; className?: string
 }) {
   return (
-    <section className={`rounded-[var(--radius-card)] border border-line bg-card p-5 shadow-[var(--shadow-card)] sm:p-6 ${className}`}>
+    <section className={`glass rounded-[var(--radius-card)] p-5 sm:p-6 ${className}`}>
       {(title || icon || status) && (
         <div className="mb-5 flex items-start gap-3">
           {icon && (
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-line bg-surface text-xl" aria-hidden="true">{icon}</div>
+            <div className="glass-inner grid h-11 w-11 shrink-0 place-items-center rounded-xl text-xl" aria-hidden="true">{icon}</div>
           )}
           <div className="min-w-0 flex-1">
             {title && <h2 className="text-lg font-semibold tracking-tight text-ink">{title}</h2>}
@@ -127,7 +127,7 @@ export function CopyField({ label, value }: { label: string; value: string }) {
 
 export function Stat({ label, value, hint, accent = false }: { label: string; value: ReactNode; hint?: ReactNode; accent?: boolean }) {
   return (
-    <div className={`rounded-2xl border p-4 ${accent ? 'border-gold/40 bg-gold/10' : 'border-line bg-surface/70'}`}>
+    <div className={`rounded-2xl p-4 ${accent ? 'border border-gold/40 bg-gold/10' : 'glass-inner'}`}>
       <div className="text-xs font-medium uppercase tracking-wider text-muted">{label}</div>
       <div className={`num mt-1 text-2xl font-bold tracking-tight ${accent ? 'text-gold' : 'text-ink'}`}>{value}</div>
       {hint && <div className="mt-0.5 text-xs text-muted">{hint}</div>}
