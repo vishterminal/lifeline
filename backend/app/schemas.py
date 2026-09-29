@@ -40,6 +40,7 @@ class UserOut(BaseModel):
     phone_e164: str | None
     salary_day: int | None
     balance_amount: Decimal | None
+    salary_amount: Decimal | None = None
     balance_as_of: datetime | None
     allow_cloud_image_processing: bool
     whatsapp_last_inbound_at: datetime | None
@@ -56,6 +57,7 @@ class ProfileIn(BaseModel):
     phone_e164: str | None = None
     salary_day: int | None = Field(None, ge=1, le=31)
     balance_amount: Decimal | None = Field(None, ge=0)
+    salary_amount: Decimal | None = Field(None, ge=0)
     balance_as_of: datetime | None = None
     allow_cloud_image_processing: bool | None = None
 
