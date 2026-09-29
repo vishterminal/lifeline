@@ -12,8 +12,6 @@ from app.config import get_settings
 
 log = logging.getLogger("lifeline.llm")
 
-# Models that accept the server-side refusal fallback ("default" routing).
-_FALLBACK_MODELS: set[str] = set()
 
 
 class LLMError(Exception):
@@ -40,9 +38,6 @@ class LLMClient:
             messages=[{"role": "user", "content": content}],
             output_config={"effort": "low", "format": {"type": "json_schema", "schema": schema}},
         )
-        if self.model in _FALLBACK_MODELS:
-            kwargs["extra_headers"] = {"anthropic-beta": "server-side-fallback-2026-07-01"}
-            kwargs["extra_body"] = {"fallbacks": "default"}
         try:
             resp = self._client.messages.create(**kwargs)
         except self._anthropic.APITimeoutError as e:

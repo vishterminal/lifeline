@@ -275,7 +275,7 @@ function SmsCard({ src }: { src: SmsSource }) {
           <p className="mt-2 text-xs text-muted">{src.caveat}</p>
         </details>
         {src.webhook_url.includes('localhost') && (
-          <p className="text-xs text-amber-300">Your phone can't reach "localhost". Run a tunnel (ngrok/cloudflared) and set PUBLIC_BASE_URL to use a real phone.</p>
+          <p className="text-xs text-amber-300">This address only works on this computer. To use a real phone, run a tunnel (ngrok/cloudflared) and set PUBLIC_BASE_URL.</p>
         )}
       </div>
       </details>

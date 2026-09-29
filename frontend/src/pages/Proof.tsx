@@ -67,7 +67,7 @@ export default function Proof() {
       <section className="rounded-2xl border border-line bg-card p-5 text-sm text-ink-2">
         <h2 className="text-lg font-semibold text-ink">Run it live yourself</h2>
         <ol className="mt-2 list-decimal space-y-1 pl-5">
-          <li>Create a Google OAuth client (Web) with redirect URIs <code>http://localhost:8000/api/auth/google/callback</code> and <code>http://localhost:8000/api/sources/gmail/callback</code>; enable the Gmail API.</li>
+          <li>Create a Google OAuth client (Web) with redirect URIs <code>&lt;your-app-url&gt;/api/auth/google/callback</code> and <code>&lt;your-app-url&gt;/api/sources/gmail/callback</code>; enable the Gmail API.</li>
           <li>Put <code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code>, <code>TOKEN_ENCRYPTION_KEY</code> and <code>CONNECTOR_MODE=live</code> in <code>.env</code>.</li>
           <li>For WhatsApp / SMS: run <code>ngrok http 8000</code>, set <code>PUBLIC_BASE_URL</code>, add Twilio keys, and point the sandbox webhook at <code>/api/webhooks/twilio/whatsapp</code>.</li>
         </ol>

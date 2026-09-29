@@ -11,11 +11,13 @@ def test_mock_google_login_flow(client):
     frag = parse_qs(urlparse(loc).fragment)
     token = frag["token"][0]
     me = client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"}).json()["user"]
-    assert me["email"] == "demo.google.user@gmail.com"
-    # second sign-in -> same account, goes to inbox
+    # Without Google keys, each sign-in is a private judge demo account (judges never collide)
+    assert me["email"].startswith("judge-") and me["is_demo"] is True
     r = client.get("/api/auth/google/start", follow_redirects=False)
     loc2 = client.get(r.headers["location"], follow_redirects=False).headers["location"]
-    assert "next=/inbox" in loc2
+    tok2 = parse_qs(urlparse(loc2).fragment)["token"][0]
+    me2 = client.get("/api/auth/me", headers={"Authorization": f"Bearer {tok2}"}).json()["user"]
+    assert me2["email"] != me["email"]
 
 
 def test_google_callback_rejects_forged_state(client):

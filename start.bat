@@ -42,7 +42,7 @@ if not exist "frontend\dist\index.html" (
   pushd frontend && call npm install && call npm run build && popd || goto :fail
 )
 
-echo [3/3] Starting Lifeline at http://localhost:8000  - keep this window open, press Ctrl+C to stop.
+echo [3/3] Starting Lifeline - it opens in your browser. Keep this window open, press Ctrl+C to stop.
 start "" cmd /c "timeout /t 5 >nul & start http://localhost:8000"
 cd backend
 "%VPY%" -m uvicorn app.main:app --host 127.0.0.1 --port 8000

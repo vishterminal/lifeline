@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api, ApiError, auth, type User } from '../api'
@@ -67,6 +68,8 @@ export default function Login() {
   const [name, setName] = useState('')
   const [err, setErr] = useState<string | null>(ERRORS[params.get('error') ?? ''] ?? null)
   const [busy, setBusy] = useState(false)
+  const health = useQuery({ queryKey: ['health'], queryFn: () => api<{ connectors: Record<string, string> }>('/health') })
+  const googleLive = health.data?.connectors.google_login === 'live'
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -149,7 +152,10 @@ export default function Login() {
               className="glass-inner flex min-h-11 w-full items-center justify-center gap-3 rounded-xl px-4 py-2.5 font-medium text-ink hover:border-gold/50">
               <GoogleIcon /> Continue with Google
             </a>
-            <p className="mt-2 text-center text-xs text-muted">Google sign-in connects your real Gmail (read-only).</p>
+            <p className="mt-2 text-center text-xs text-muted">
+              {googleLive ? 'Google sign-in connects your real Gmail (read-only).'
+                : <>In this hosted demo, Google sign-in opens a demo account too. <a href="/proof" className="text-gold hover:underline">See it with a real Gmail →</a></>}
+            </p>
 
             <p className="mt-6 text-center text-sm text-ink-2">
               {mode === 'register'

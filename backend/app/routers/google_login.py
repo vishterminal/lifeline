@@ -82,7 +82,8 @@ def callback(request: Request, code: str | None = None, state: str | None = None
         if not info.get("email_verified"):
             return _fail("email_not_verified")
     else:
-        info = {"sub": "mock-google-user", "email": "demo.google.user@gmail.com", "name": "Demo Google User"}
+        tag = secrets.token_hex(4)
+        info = {"sub": f"mock-{tag}", "email": f"judge-{tag}@demo.lifeline", "name": "Judge", "demo": True}
 
     sub, email = str(info["sub"]), str(info["email"]).lower()
     user = db.scalar(select(User).where(User.google_sub == sub)) or \
@@ -90,7 +91,8 @@ def callback(request: Request, code: str | None = None, state: str | None = None
     is_new = user is None
     if is_new:
         # Google-only account: random unusable password.
-        user = User(email=email, name=info.get("name"), password_hash=hash_password(secrets.token_urlsafe(32)))
+        user = User(email=email, name=info.get("name"), password_hash=hash_password(secrets.token_urlsafe(32)),
+                    is_demo=bool(info.get("demo")))
         db.add(user)
     user.google_sub = sub
     if not user.name and info.get("name"):

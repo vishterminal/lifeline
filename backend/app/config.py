@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     llm_mode: str = "mock"  # live | mock
     timezone: str = "Asia/Kolkata"
     enable_scheduler: bool = True
+    # Serverless hosting (e.g. Vercel) keeps the SQLite file in /tmp, which can be reset between
+    # cold starts. When true, a valid session whose account vanished gets a fresh judge account.
+    ephemeral_db: bool = False
 
     google_client_id: str = ""
     google_client_secret: str = ""

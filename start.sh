@@ -23,7 +23,7 @@ if [ ! -f frontend/dist/index.html ]; then
   echo "Web app build missing - building with npm..."
   (cd frontend && npm install && npm run build)
 fi
-echo "[3/3] Starting Lifeline at http://localhost:8000  (Ctrl+C to stop)"
+echo "[3/3] Starting Lifeline - it opens in your browser (Ctrl+C to stop)"
 ( sleep 4; (command -v open >/dev/null && open http://localhost:8000) || (command -v xdg-open >/dev/null && xdg-open http://localhost:8000) || true ) &
 cd backend
 exec "$VPY" -m uvicorn app.main:app --host 127.0.0.1 --port 8000
