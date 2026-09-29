@@ -2,8 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
-  api, ApiError, when, type GmailSource, type PipelineResult, type SmsSource, type Source, type WhatsAppSource,
+  api, ApiError, when, type GmailSource, type PipelineResult, type SmsSource, type Source, type SyncItem,
+  type SyncResult, type WhatsAppSource,
 } from '../api'
+import { useJudgeMode } from '../judge'
+import { OutcomeChip, SampleInbox, SmsSimulator, WhatsAppSimulator } from '../simulators'
 import { Button, Card, CopyField, Notice, OUTCOME_TEXT, outcomeTone, StatusBadge } from '../ui'
 
 function useInvalidate() {
@@ -29,6 +32,8 @@ function ResultNote({ r }: { r: PipelineResult | null }) {
 function GmailCard({ src }: { src: GmailSource }) {
   const invalidate = useInvalidate()
   const [params] = useSearchParams()
+  const judge = useJudgeMode()
+  const [items, setItems] = useState<SyncItem[] | null>(null)
   const [msg, setMsg] = useState<{ tone: 'ok' | 'error' | 'info'; text: string } | null>(null)
   useEffect(() => {
     const g = params.get('gmail')
@@ -43,9 +48,10 @@ function GmailCard({ src }: { src: GmailSource }) {
     onError: (e) => setMsg({ tone: 'error', text: errText(e) }),
   })
   const sync = useMutation({
-    mutationFn: () => api<{ fetched: number; saved: number; needs_review: number; flagged: number; status: string; error: string | null }>('/sources/gmail/sync', { method: 'POST' }),
+    mutationFn: () => api<SyncResult>('/sources/gmail/sync', { method: 'POST' }),
     onSuccess: (r) => {
       invalidate()
+      if (r.items) setItems(r.items)
       if (r.status === 'NEEDS_RECONNECT') setMsg({ tone: 'error', text: 'Gmail access expired — reconnect below.' })
       else if (r.status === 'ERROR') setMsg({ tone: 'error', text: r.error ?? 'Could not read Gmail. Try again.' })
       else if (r.fetched === 0) setMsg({ tone: 'info', text: 'Inbox checked — no new bill-like emails since the last check (looks at the last 2 days).' })
@@ -86,9 +92,21 @@ function GmailCard({ src }: { src: GmailSource }) {
           </Button>
         )}
         {src.mode === 'mock' && (
-          <p className="text-xs text-amber-700">Demo mode: Google keys aren't set, so this connects a sample inbox (electricity bill, PUC expiry, Netflix receipt).</p>
+          <p className="text-xs text-violet-700">Judge mode: Google keys aren't set, so "Connect Gmail" connects a sample inbox with real-world cases — bills, a renewal, a receipt, a newsletter and a phishing email. With keys, the same button opens Google's read-only consent screen for your real inbox.</p>
         )}
         {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
+        {judge && connected && <SampleInbox items={items} />}
+        {!judge && items && items.length > 0 && (
+          <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+            {items.map((i, n) => (
+              <li key={n} className="px-3 py-2 text-sm">
+                <div className="font-medium">{i.subject}</div>
+                <div className="text-xs text-slate-500">{i.from}</div>
+                <div className="mt-1"><OutcomeChip outcome={i.outcome} /></div>
+              </li>
+            ))}
+          </ul>
+        )}
         <p className="text-xs text-slate-500">We store only the extracted details (biller, amount, date) — never the email itself.</p>
       </div>
     </Card>
@@ -111,13 +129,26 @@ function WhatsAppCard({ src }: { src: WhatsAppSource }) {
     onSuccess: (r) => { setReply(r.reply); invalidate() },
     onError: (e) => setErr(errText(e)),
   })
+  const judge = useJudgeMode()
   const sandboxDigits = src.sandbox_number.replace(/\D/g, '')
   const joinText = src.sandbox_join_code || 'join <your-sandbox-code>'
   const waLink = `https://wa.me/${sandboxDigits}?text=${encodeURIComponent(joinText)}`
   const linked = !!src.phone_e164
 
   return (
-    <Card icon="💬" title="WhatsApp" subtitle="Forward any bill, photo or PDF to the Lifeline number." status={<StatusBadge status={src.status} />}>
+    <Card icon="💬" title="WhatsApp" subtitle="Forward any bill, photo or PDF to the Lifeline number." status={<StatusBadge status={judge ? 'CONNECTED' : src.status} />}>
+      {judge && (
+        <div className="mb-4 grid gap-4 md:grid-cols-2">
+          <WhatsAppSimulator />
+          <div className="space-y-2 text-sm text-slate-700">
+            <p><b>Try it:</b> tap <i>Forward TNEB bill</i> or paste any bill text. Lifeline reads it and replies, exactly as it does on a real phone through the Twilio WhatsApp sandbox.</p>
+            <p>Also try <b>WHAT'S DUE</b> and <b>HELP</b>, or send "Hey, dinner tonight?" — it's ignored because it isn't a bill.</p>
+            <p className="text-xs text-violet-700">Live version: a real phone forwards to the sandbox number → Twilio (signature-checked) → the same pipeline → reply on WhatsApp.</p>
+          </div>
+        </div>
+      )}
+      <details open={!judge} className={judge ? 'rounded-lg bg-slate-50 p-3' : ''}>
+      {judge && <summary className="cursor-pointer text-sm font-medium">Live setup with a real phone</summary>}
       <ol className="space-y-4">
         <li>
           <div className="text-sm font-semibold">1. Your WhatsApp number</div>
@@ -161,6 +192,7 @@ function WhatsAppCard({ src }: { src: WhatsAppSource }) {
           )}
         </li>
       </ol>
+      </details>
       {err && <div className="mt-3"><Notice tone="error">{err}</Notice></div>}
       {src.mode === 'mock' && <p className="mt-3 text-xs text-amber-700">Demo mode: Twilio keys aren't set. Real forwarding needs the Twilio sandbox webhook pointed at {src.webhook_url}.</p>}
     </Card>
@@ -194,9 +226,22 @@ function SmsCard({ src }: { src: SmsSource }) {
     mutationFn: () => api('/sources/sms', { method: 'DELETE' }),
     onSuccess: () => { setToken(null); invalidate() },
   })
+  const judge = useJudgeMode()
 
   return (
-    <Card icon="📱" title="SMS (Android)" subtitle="A free SMS-forwarder app on your phone sends bill SMS to Lifeline." status={<StatusBadge status={src.status} />}>
+    <Card icon="📱" title="SMS (Android)" subtitle="A free SMS-forwarder app on your phone sends bill SMS to Lifeline." status={<StatusBadge status={judge ? 'CONNECTED' : src.status} />}>
+      {judge && (
+        <div className="mb-4 grid gap-4 md:grid-cols-2">
+          <SmsSimulator />
+          <div className="space-y-2 text-sm text-slate-700">
+            <p><b>Try it:</b> forward each SMS and watch what Lifeline does. The OTP is dropped instantly and never stored; the personal message is ignored; the bill is tracked.</p>
+            <p>Forward the <b>payment debited</b> SMS after confirming the TNEB bill in Review — Lifeline marks the bill paid by itself.</p>
+            <p className="text-xs text-violet-700">Live version: an SMS-forwarder app on an Android phone POSTs to <code>/api/ingest/sms</code> with a secret token — the "Live setup" below generates it and even sends a test SMS through the real webhook.</p>
+          </div>
+        </div>
+      )}
+      <details open={!judge} className={judge ? 'rounded-lg bg-slate-50 p-3' : ''}>
+      {judge && <summary className="cursor-pointer text-sm font-medium">Live setup with a real phone (webhook + token)</summary>}
       <div className="space-y-4">
         {!token && (
           <div className="flex flex-wrap items-center gap-2">
@@ -233,6 +278,7 @@ function SmsCard({ src }: { src: SmsSource }) {
           <p className="text-xs text-amber-700">Your phone can't reach "localhost". Run a tunnel (ngrok/cloudflared) and set PUBLIC_BASE_URL to use a real phone.</p>
         )}
       </div>
+      </details>
     </Card>
   )
 }
@@ -306,34 +352,6 @@ function OtherInputs() {
   )
 }
 
-// --- Demo -------------------------------------------------------------------------------
-function DemoPanel() {
-  const invalidate = useInvalidate()
-  const [res, setRes] = useState<PipelineResult | null>(null)
-  const run = useMutation({
-    mutationFn: ([path, body]: [string, unknown]) => api<PipelineResult>(path, { method: 'POST', json: body ?? {} }),
-    onSuccess: (r) => { setRes(r); invalidate() },
-  })
-  const items: [string, string, unknown][] = [
-    ['Bill SMS (electricity)', '/demo/simulate/sms', { fixture: 'bill' }],
-    ['OTP SMS (gets dropped)', '/demo/simulate/sms', { fixture: 'otp' }],
-    ['SMS where readers disagree', '/demo/simulate/sms', { fixture: 'mismatch' }],
-    ['Payment debited SMS', '/demo/simulate/sms', { fixture: 'debit' }],
-    ['PUC expiry email', '/demo/simulate/email', { fixture: 'puc_expiry' }],
-    ['⚠ Fake Netflix email', '/demo/simulate/fake-email', {}],
-  ]
-  return (
-    <Card icon="🧪" title="Try it without a phone" subtitle="Sends sample messages through the real pipeline. Items are labelled DEMO.">
-      <div className="flex flex-wrap gap-2">
-        {items.map(([label, path, body]) => (
-          <Button key={label} variant="secondary" disabled={run.isPending} onClick={() => run.mutate([path, body])}>{label}</Button>
-        ))}
-      </div>
-      <div className="mt-3"><ResultNote r={res} /></div>
-    </Card>
-  )
-}
-
 export default function Connect() {
   const sources = useQuery({ queryKey: ['sources'], queryFn: () => api<Source[]>('/sources') })
   if (sources.isLoading) return <p className="text-slate-500">Loading…</p>
@@ -351,7 +369,6 @@ export default function Connect() {
       <WhatsAppCard src={by.WHATSAPP} />
       <SmsCard src={by.SMS} />
       <OtherInputs />
-      <DemoPanel />
     </div>
   )
 }

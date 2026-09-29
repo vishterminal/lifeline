@@ -8,7 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
+# dist is committed on purpose: the backend serves it, so judges need only Python
 dist-ssr
 *.local
 

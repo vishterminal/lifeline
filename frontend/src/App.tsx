@@ -5,6 +5,8 @@ import AuthCallback from './pages/AuthCallback'
 import Bills from './pages/Bills'
 import Connect from './pages/Connect'
 import Login from './pages/Login'
+import Proof from './pages/Proof'
+import { JudgeBanner } from './judge'
 import Review from './pages/Review'
 
 function RequireAuth() {
@@ -33,6 +35,7 @@ function Shell() {
               {pending > 0 && <span className="rounded-full bg-amber-500 px-1.5 text-xs text-white">{pending}</span>}
             </NavLink>
             <NavLink to="/bills" className={link}>Bills</NavLink>
+            <NavLink to="/proof" className={link}>Proven live</NavLink>
           </nav>
           <div className="ml-auto flex items-center gap-2 text-sm text-slate-500">
             <span className="hidden sm:inline">{me.data?.user.email}</span>
@@ -43,6 +46,7 @@ function Shell() {
           </div>
         </div>
       </header>
+      <JudgeBanner />
       <main className="mx-auto max-w-5xl px-4 py-6">
         <Outlet />
       </main>
@@ -55,6 +59,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/proof" element={<Proof />} />
       <Route element={<RequireAuth />}>
         <Route path="/connect" element={<Connect />} />
         <Route path="/inbox" element={<Review />} />

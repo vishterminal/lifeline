@@ -117,6 +117,7 @@ export interface Confirmation {
   reason: string
   created_at: string
   draft: {
+    sources?: string[]
     fields: DraftFields
     mismatches?: string[]
     candidates?: { llm?: Record<string, unknown> | null; rules?: Record<string, unknown>; llm_failure?: string }
@@ -156,3 +157,17 @@ export const day = (iso: string | null | undefined) =>
 export const when = (iso: string | null | undefined) =>
   iso ? new Date(iso.endsWith('Z') || iso.includes('+') ? iso : iso + 'Z').toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'never'
 export const pretty = (s: string | null | undefined) => (s ? s.replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase()) : '')
+
+export interface Health {
+  status: string
+  judge_mode: boolean
+  connectors: Record<string, string>
+}
+export interface SmsFixture { id: string; sender: string; text: string; expect: string }
+export interface Fixtures { sms: SmsFixture[]; whatsapp: { id: string; text: string }[]; email: string[] }
+export interface InboxMail { id: string; from: string; address: string; subject: string; preview: string }
+export interface SyncItem { from: string; address: string; subject: string; outcome: string; summary: string | null; reason: string | null }
+export interface SyncResult {
+  fetched: number; saved: number; needs_review: number; flagged: number
+  status: string; error: string | null; items?: SyncItem[]
+}

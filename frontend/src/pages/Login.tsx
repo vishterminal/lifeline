@@ -63,7 +63,13 @@ export default function Login() {
         <h1 className="text-3xl font-bold tracking-tight">Lifeline</h1>
         <p className="mt-1 text-slate-600">All your bills, renewals and dues in one place — collected automatically.</p>
 
-        <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        {googleMock && (
+          <a href="/api/auth/google/start"
+            className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-violet-600 px-4 py-3 font-semibold text-white shadow-sm hover:bg-violet-700">
+            🎓 Enter judge demo — no sign-up
+          </a>
+        )}
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <a
             href="/api/auth/google/start"
             className="flex min-h-11 w-full items-center justify-center gap-3 rounded-lg border border-slate-300 bg-white px-4 py-2.5 font-medium hover:bg-slate-50"
@@ -71,8 +77,9 @@ export default function Login() {
             <GoogleIcon /> Continue with Google
           </a>
           {googleMock && (
-            <p className="mt-2 text-xs text-amber-700">
-              Google keys aren't set, so this signs you in as a demo Google user.
+            <p className="mt-2 text-xs text-violet-700">
+              Judge mode: Google keys aren't set, so this signs you in as a demo Google user. With keys it opens the
+              real Google account picker — <a href="/proof" className="underline">see it live</a>.
             </p>
           )}
 

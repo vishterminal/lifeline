@@ -50,7 +50,8 @@ function ConfirmationCard({ c }: { c: Confirmation }) {
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="amber">{pretty(c.reason)}</Badge>
         <OriginBadge origin={c.origin} />
-        <Badge>via {pretty(c.source_kind)}</Badge>
+        {(c.draft.sources ?? [c.source_kind]).map((k) => <Badge key={k}>via {pretty(k)}</Badge>)}
+        {(c.draft.sources?.length ?? 0) > 1 && <Badge tone="sky">Same bill from {c.draft.sources!.length} channels — shown once</Badge>}
         {c.draft.trust && <TrustBadge label={c.draft.trust.label} />}
         <span className="ml-auto text-xs text-slate-500">{when(c.created_at)}</span>
       </div>
