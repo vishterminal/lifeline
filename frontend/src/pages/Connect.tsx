@@ -398,9 +398,13 @@ function OtherInputs() {
         <h2 className="text-xl font-semibold">Other ways to add</h2>
         <p className="text-sm text-muted">Fallbacks when a bill didn't come through automatically.</p>
       </div>
-      <UploadCard />
-      <TypeItInCard />
-      <StatementCard />
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-5 [&>*]:min-w-0">
+        <div className="lg:col-span-3 [&>*]:h-full"><TypeItInCard /></div>
+        <div className="flex flex-col gap-5 lg:col-span-2 [&>*]:flex-1">
+          <UploadCard />
+          <StatementCard />
+        </div>
+      </div>
     </section>
   )
 }

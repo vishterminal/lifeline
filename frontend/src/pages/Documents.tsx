@@ -26,7 +26,7 @@ export default function Documents() {
   const vehicle = ['PUC', 'INSURANCE_VEHICLE', 'VEHICLE_RC'].includes(f.kind)
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div>
       <PageHeader title="Documents" subtitle="Expiry dates of your certificates and IDs — only the date and the last 4 characters are kept, never the file." />
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-5 [&>*]:min-w-0">
         <Card title="Add a document" className="lg:col-span-2">

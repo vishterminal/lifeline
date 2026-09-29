@@ -48,7 +48,7 @@ export default function CashFlow() {
   const plan = useQuery({ queryKey: ['cashflow'], queryFn: () => api<CashflowPlan>('/cashflow/plan?days=45') })
   const p = plan.data
   return (
-    <div className="mx-auto max-w-5xl">
+    <div>
       <PageHeader title="Cash flow" subtitle="When to pay each bill, planned around your salary day and balance — so nothing bounces and the costliest penalties are avoided first." />
       {plan.isLoading && <p className="text-muted">Loading…</p>}
       {p?.needs_balance && <EmptyState>Add your current balance (and salary day) in <Link to="/settings" className="font-semibold text-gold underline">Settings</Link> to plan payments.</EmptyState>}

@@ -13,14 +13,17 @@ export default function Settings() {
   const sources = useQuery({ queryKey: ['sources'], queryFn: () => api<Source[]>('/sources') })
   const [form, setForm] = useState({ name: '', phone_e164: '', salary_day: '', balance_amount: '', salary_amount: '', allow_cloud_image_processing: false })
   const [msg, setMsg] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null)
+  const [loaded, setLoaded] = useState(false)
 
+  // Fill the form once, when the profile first arrives; a background refetch must never wipe what you're typing.
   useEffect(() => {
     const p = profile.data
-    if (p) setForm({
+    if (p && !loaded) setLoaded(true)
+    if (p && !loaded) setForm({
       name: p.name ?? '', phone_e164: p.phone_e164 ?? '', salary_day: p.salary_day?.toString() ?? '',
       balance_amount: p.balance_amount ?? '', salary_amount: p.salary_amount ?? '', allow_cloud_image_processing: p.allow_cloud_image_processing,
     })
-  }, [profile.data])
+  }, [profile.data, loaded])
 
   const save = useMutation({
     mutationFn: () => {
@@ -42,7 +45,8 @@ export default function Settings() {
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-3 [&>*]:min-w-0">
         <div className="space-y-5 lg:col-span-2">
         <Card title="Profile & money" subtitle="Used for the Overview balance and planning.">
-          <form className="grid grid-cols-1 [&>*]:min-w-0 gap-4 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); setMsg(null); save.mutate() }}>
+          <form onSubmit={(e) => { e.preventDefault(); setMsg(null); save.mutate() }}>
+            <fieldset disabled={!loaded} className="m-0 grid min-w-0 grid-cols-1 gap-4 border-0 p-0 sm:grid-cols-2 [&>*]:min-w-0">
             <label className={label}>Name
               <input className={`${inputCls} mt-1 w-full`} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoComplete="name" />
             </label>
@@ -79,9 +83,10 @@ export default function Settings() {
               <Button type="submit" disabled={save.isPending}>{save.isPending ? 'Saving…' : 'Save changes'}</Button>
               {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
             </div>
+            </fieldset>
           </form>
         </Card>
-        <div className="grid grid-cols-1 items-start gap-5 md:grid-cols-2 [&>*]:min-w-0">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 [&>*]:min-w-0">
           <NotificationsCard />
           <FamilyCard />
         </div>

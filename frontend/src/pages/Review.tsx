@@ -92,17 +92,17 @@ function ConfirmationCard({ c }: { c: Confirmation }) {
         <ul className="mt-3 list-disc pl-5 text-xs text-ink-2">{c.draft.trust.reasons.map((r) => <li key={r}>{r}</li>)}</ul>
       )}
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-4">
-        <label className="sm:col-span-2"><span className="text-xs font-medium text-muted">Biller</span>
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 [&>*]:min-w-0">
+        <label><span className="text-xs font-medium text-muted">Biller</span>
           <input className={input} value={form.biller} onChange={(e) => setForm({ ...form, biller: e.target.value })} /></label>
+        <label><span className="text-xs font-medium text-muted">Type</span>
+          <select className={input} value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+            {TYPES.map((t) => <option key={t} value={t}>{pretty(t)}</option>)}
+          </select></label>
         <label><span className="text-xs font-medium text-muted">Amount ₹ {mismatches.includes('amount') && <b className="text-amber-300">(choose)</b>}</span>
           <input className={input} inputMode="decimal" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></label>
         <label><span className="text-xs font-medium text-muted">{f.message_kind === 'RECEIPT' || f.message_kind === 'PAYMENT_CONFIRMATION' ? 'Paid on' : 'Due date'} {mismatches.includes('due_date') && <b className="text-amber-300">(choose)</b>}</span>
           <input className={input} type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} /></label>
-        <label className="sm:col-span-2"><span className="text-xs font-medium text-muted">Type</span>
-          <select className={input} value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-            {TYPES.map((t) => <option key={t} value={t}>{pretty(t)}</option>)}
-          </select></label>
       </div>
       {err && <div className="mt-3"><Notice tone="error">{err}</Notice></div>}
       <div className="mt-4 flex flex-wrap gap-2">

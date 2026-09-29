@@ -155,11 +155,11 @@ function Shell() {
           </div>
         </nav>
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <Outlet />
       </main>
       <AskLifeline />
-      <footer className="mx-auto max-w-7xl px-4 pb-24 text-xs text-muted sm:px-6 print:hidden">
+      <footer className="mx-auto max-w-6xl px-4 pb-24 text-xs text-muted sm:px-6 print:hidden">
         Lifeline stores only extracted bill details — never your emails or messages. · <Link to="/proof" className="hover:text-gold">Proven live</Link>
       </footer>
     </div>

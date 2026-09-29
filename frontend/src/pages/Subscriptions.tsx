@@ -25,7 +25,7 @@ export default function Subscriptions() {
     else setNote({ ...note, [id]: `No official account page on file. ${what[0].toUpperCase() + what.slice(1)} it from the app or website you subscribed with.` })
   }
   return (
-    <div className="mx-auto max-w-5xl">
+    <div>
       <PageHeader title="Subscriptions" subtitle="Everything that renews on its own: what it costs you each month and year, what charges automatically, and where you're paying twice." />
       {q.isLoading && <p className="text-muted">Loading…</p>}
       {d && (

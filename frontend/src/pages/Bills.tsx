@@ -265,7 +265,7 @@ export default function Bills() {
   const tabCls = (on: boolean) => `min-h-10 rounded-full px-4 text-sm font-medium ${on ? 'bg-gold text-bg' : 'text-ink-2 hover:text-ink'}`
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div>
       <div>
         <PageHeader title="Bills" subtitle="Ranked by what missing them would really cost you — not just by date."
           actions={

@@ -15,7 +15,7 @@ export default function Report() {
   const [month, setMonth] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`)
   const r = useQuery({ queryKey: ['report', month], queryFn: () => api<MonthlyReport>(`/report?month=${month}`) }).data
   return (
-    <div className="mx-auto max-w-4xl">
+    <div>
       <PageHeader title="Monthly report" subtitle="What Lifeline did for you this month."
         actions={<div className="flex gap-1 print:hidden">
           <Button variant="secondary" onClick={() => setMonth(shift(month, -1))} aria-label="Previous month">‹</Button>

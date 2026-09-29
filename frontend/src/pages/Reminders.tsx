@@ -47,7 +47,7 @@ export default function Reminders() {
   rows.forEach((r) => { if (!byBill.has(r.obligation_id)) byBill.set(r.obligation_id, r) })
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div>
       <PageHeader title="Reminders" subtitle="Loudness follows ₹ risk: low-risk bills get a gentle nudge, high-risk ones escalate to WhatsApp and, as a last resort, a family member."
         actions={<div className="flex flex-wrap gap-2">
           <Button onClick={() => tick.mutate()} disabled={tick.isPending}>{tick.isPending ? 'Checking…' : 'Run reminder check now'}</Button>
