@@ -48,6 +48,9 @@ export interface User {
   email: string
   name: string | null
   phone_e164: string | null
+  salary_day: number | null
+  balance_amount: string | null
+  balance_as_of: string | null
   allow_cloud_image_processing: boolean
   whatsapp_last_inbound_at: string | null
 }
@@ -97,7 +100,9 @@ export interface Obligation {
   confidence: number
   extractors_agreed: boolean
   is_recurring: boolean
+  recurrence_interval_days: number | null
   next_expected_date: string | null
+  created_at: string
   price_changed: boolean
   paid_via: string | null
 }

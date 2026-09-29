@@ -24,26 +24,26 @@ export default function Bills() {
       <div className="space-y-4 lg:col-span-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Bills found</h1>
-          <p className="text-slate-600">Everything collected so far, soonest first. (Ranking by ₹ risk comes next.)</p>
+          <p className="text-ink-2">Everything collected so far, soonest first. (Ranking by ₹ risk comes next.)</p>
         </div>
-        {obls.isLoading && <p className="text-slate-500">Loading…</p>}
+        {obls.isLoading && <p className="text-muted">Loading…</p>}
         {obls.isError && <Notice tone="error">Couldn't load bills. <button className="underline" onClick={() => obls.refetch()}>Retry</button></Notice>}
         {obls.data?.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-600">
+          <div className="rounded-2xl border border-dashed border-line p-8 text-center text-ink-2">
             Nothing tracked yet — <Link to="/connect" className="font-semibold underline">connect a source or try a demo message</Link>.
           </div>
         )}
         <ul className="space-y-3">
           {obls.data?.map((o) => (
-            <li key={o.id} className={`rounded-2xl border bg-white p-4 shadow-sm ${o.status === 'PAID' ? 'border-slate-200 opacity-70' : 'border-slate-200'}`}>
+            <li key={o.id} className={`rounded-2xl border bg-card p-4 shadow-sm ${o.status === 'PAID' ? 'border-line opacity-70' : 'border-line'}`}>
               <div className="flex items-start gap-3">
                 <div className="text-2xl" aria-hidden="true">{ICON[o.type] ?? '📄'}</div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline gap-x-3">
                     <h2 className="font-semibold">{o.biller_raw ?? o.biller_norm ?? 'Bill'}</h2>
-                    <span className="text-sm text-slate-500">{pretty(o.type)}</span>
+                    <span className="text-sm text-muted">{pretty(o.type)}</span>
                   </div>
-                  <div className="mt-1 text-sm text-slate-700">
+                  <div className="mt-1 text-sm text-ink-2">
                     {o.status === 'PAID' ? <>Paid{o.paid_via === 'AUTO_DETECTED' ? ' (detected from your payment message)' : ''}</> :
                       <>{o.is_recurring ? 'Renews' : 'Due'} {day(o.due_date)} · <b>{daysLeft(o.due_date)}</b></>}
                   </div>
@@ -64,15 +64,15 @@ export default function Bills() {
       </div>
       <aside>
         <h2 className="mb-3 text-lg font-semibold">Recent activity</h2>
-        <p className="mb-3 text-xs text-slate-500">What happened to each incoming message. Message text is never stored.</p>
+        <p className="mb-3 text-xs text-muted">What happened to each incoming message. Message text is never stored.</p>
         <ul className="space-y-2">
           {events.data?.map((e) => (
-            <li key={e.id} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm">
-              <div className="flex justify-between gap-2"><b>{pretty(e.source_kind)}</b><span className="text-xs text-slate-500">{when(e.received_at)}</span></div>
-              <div className="text-slate-700">{OUTCOME_TEXT[e.outcome] ?? e.outcome}</div>
+            <li key={e.id} className="rounded-xl border border-line bg-card px-3 py-2 text-sm">
+              <div className="flex justify-between gap-2"><b>{pretty(e.source_kind)}</b><span className="text-xs text-muted">{when(e.received_at)}</span></div>
+              <div className="text-ink-2">{OUTCOME_TEXT[e.outcome] ?? e.outcome}</div>
             </li>
           ))}
-          {events.data?.length === 0 && <li className="text-sm text-slate-500">No messages yet.</li>}
+          {events.data?.length === 0 && <li className="text-sm text-muted">No messages yet.</li>}
         </ul>
       </aside>
     </div>

@@ -19,5 +19,5 @@ export default function AuthCallback() {
       nav('/login?error=state_mismatch', { replace: true })
     }
   }, [nav])
-  return <p className="p-8 text-slate-600">Signing you in…</p>
+  return <p className="p-8 text-ink-2">Signing you in…</p>
 }

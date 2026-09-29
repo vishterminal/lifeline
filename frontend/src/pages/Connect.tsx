@@ -77,7 +77,7 @@ function GmailCard({ src }: { src: GmailSource }) {
         {src.status === 'NEEDS_RECONNECT' && <Notice tone="warn">Google access expired (testing-mode tokens last ~7 days). Reconnect to keep collecting.</Notice>}
         {connected ? (
           <>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-ink-2">
               Connected{src.gmail_address && <> as <b>{src.gmail_address}</b></>} · last checked {when(src.last_sync_at)}
             </p>
             {src.last_error && !msg && <Notice tone="error">{src.last_error}</Notice>}
@@ -92,22 +92,22 @@ function GmailCard({ src }: { src: GmailSource }) {
           </Button>
         )}
         {src.mode === 'mock' && (
-          <p className="text-xs text-violet-700">Judge mode: Google keys aren't set, so "Connect Gmail" connects a sample inbox with real-world cases — bills, a renewal, a receipt, a newsletter and a phishing email. With keys, the same button opens Google's read-only consent screen for your real inbox.</p>
+          <p className="text-xs text-violet-300">Judge mode: Google keys aren't set, so "Connect Gmail" connects a sample inbox with real-world cases — bills, a renewal, a receipt, a newsletter and a phishing email. With keys, the same button opens Google's read-only consent screen for your real inbox.</p>
         )}
         {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
         {judge && connected && <SampleInbox items={items} />}
         {!judge && items && items.length > 0 && (
-          <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+          <ul className="divide-y divide-line rounded-xl border border-line">
             {items.map((i, n) => (
               <li key={n} className="px-3 py-2 text-sm">
                 <div className="font-medium">{i.subject}</div>
-                <div className="text-xs text-slate-500">{i.from}</div>
+                <div className="text-xs text-muted">{i.from}</div>
                 <div className="mt-1"><OutcomeChip outcome={i.outcome} /></div>
               </li>
             ))}
           </ul>
         )}
-        <p className="text-xs text-slate-500">We store only the extracted details (biller, amount, date) — never the email itself.</p>
+        <p className="text-xs text-muted">We store only the extracted details (biller, amount, date) — never the email itself.</p>
       </div>
     </Card>
   )
@@ -140,14 +140,14 @@ function WhatsAppCard({ src }: { src: WhatsAppSource }) {
       {judge && (
         <div className="mb-4 grid gap-4 md:grid-cols-2">
           <WhatsAppSimulator />
-          <div className="space-y-2 text-sm text-slate-700">
+          <div className="space-y-2 text-sm text-ink-2">
             <p><b>Try it:</b> tap <i>Forward TNEB bill</i> or paste any bill text. Lifeline reads it and replies, exactly as it does on a real phone through the Twilio WhatsApp sandbox.</p>
             <p>Also try <b>WHAT'S DUE</b> and <b>HELP</b>, or send "Hey, dinner tonight?" — it's ignored because it isn't a bill.</p>
-            <p className="text-xs text-violet-700">Live version: a real phone forwards to the sandbox number → Twilio (signature-checked) → the same pipeline → reply on WhatsApp.</p>
+            <p className="text-xs text-violet-300">Live version: a real phone forwards to the sandbox number → Twilio (signature-checked) → the same pipeline → reply on WhatsApp.</p>
           </div>
         </div>
       )}
-      <details open={!judge} className={judge ? 'rounded-lg bg-slate-50 p-3' : ''}>
+      <details open={!judge} className={judge ? 'rounded-lg bg-surface p-3' : ''}>
       {judge && <summary className="cursor-pointer text-sm font-medium">Live setup with a real phone</summary>}
       <ol className="space-y-4">
         <li>
@@ -155,27 +155,27 @@ function WhatsAppCard({ src }: { src: WhatsAppSource }) {
           <form className="mt-2 flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); link.mutate() }}>
             <label className="sr-only" htmlFor="wa-phone">WhatsApp number</label>
             <input id="wa-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+919876543210"
-              className="min-h-11 flex-1 rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-900" />
+              className="min-h-11 flex-1 rounded-lg border border-line px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gold/40 focus:border-gold/60" />
             <Button type="submit" variant={linked ? 'secondary' : 'primary'} disabled={link.isPending}>{linked ? 'Update' : 'Save number'}</Button>
           </form>
-          <p className="mt-1 text-xs text-slate-500">With country code, e.g. +91 98765 43210.</p>
+          <p className="mt-1 text-xs text-muted">With country code, e.g. +91 98765 43210.</p>
         </li>
         <li className={linked ? '' : 'opacity-50'}>
           <div className="text-sm font-semibold">2. Join the Lifeline sandbox (one time)</div>
-          <p className="mt-1 text-sm text-slate-600">
-            Send <code className="rounded bg-slate-100 px-1.5 py-0.5">{joinText}</code> to <b>+{sandboxDigits}</b> on WhatsApp.
+          <p className="mt-1 text-sm text-ink-2">
+            Send <code className="rounded bg-raised px-1.5 py-0.5">{joinText}</code> to <b>+{sandboxDigits}</b> on WhatsApp.
           </p>
           <a href={waLink} target="_blank" rel="noreferrer"
             className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
             Open WhatsApp
           </a>
           {!src.sandbox_join_code && (
-            <p className="mt-1 text-xs text-amber-700">Set TWILIO_SANDBOX_JOIN_CODE in .env to show your real join code (Twilio console → Messaging → WhatsApp sandbox).</p>
+            <p className="mt-1 text-xs text-amber-300">Set TWILIO_SANDBOX_JOIN_CODE in .env to show your real join code (Twilio console → Messaging → WhatsApp sandbox).</p>
           )}
         </li>
         <li className={linked ? '' : 'opacity-50'}>
           <div className="text-sm font-semibold">3. Forward bills to that number</div>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-ink-2">
             {src.window_open
               ? <>✓ Last message received {when(src.last_inbound_at)}.</>
               : <>No message in the last 24 h. Send any message to the number so Lifeline can reply to you.</>}
@@ -186,15 +186,15 @@ function WhatsAppCard({ src }: { src: WhatsAppSource }) {
             </Button>
           </div>
           {reply && (
-            <div className="mt-3 max-w-md rounded-2xl rounded-tl-sm bg-emerald-50 px-4 py-3 text-sm whitespace-pre-line">
-              <div className="mb-1 text-xs font-semibold text-emerald-700">Lifeline replied</div>{reply}
+            <div className="mt-3 max-w-md rounded-2xl rounded-tl-sm bg-emerald-500/10 px-4 py-3 text-sm whitespace-pre-line">
+              <div className="mb-1 text-xs font-semibold text-emerald-300">Lifeline replied</div>{reply}
             </div>
           )}
         </li>
       </ol>
       </details>
       {err && <div className="mt-3"><Notice tone="error">{err}</Notice></div>}
-      {src.mode === 'mock' && <p className="mt-3 text-xs text-amber-700">Demo mode: Twilio keys aren't set. Real forwarding needs the Twilio sandbox webhook pointed at {src.webhook_url}.</p>}
+      {src.mode === 'mock' && <p className="mt-3 text-xs text-amber-300">Demo mode: Twilio keys aren't set. Real forwarding needs the Twilio sandbox webhook pointed at {src.webhook_url}.</p>}
     </Card>
   )
 }
@@ -233,49 +233,49 @@ function SmsCard({ src }: { src: SmsSource }) {
       {judge && (
         <div className="mb-4 grid gap-4 md:grid-cols-2">
           <SmsSimulator />
-          <div className="space-y-2 text-sm text-slate-700">
+          <div className="space-y-2 text-sm text-ink-2">
             <p><b>Try it:</b> forward each SMS and watch what Lifeline does. The OTP is dropped instantly and never stored; the personal message is ignored; the bill is tracked.</p>
             <p>Forward the <b>payment debited</b> SMS after confirming the TNEB bill in Review — Lifeline marks the bill paid by itself.</p>
-            <p className="text-xs text-violet-700">Live version: an SMS-forwarder app on an Android phone POSTs to <code>/api/ingest/sms</code> with a secret token — the "Live setup" below generates it and even sends a test SMS through the real webhook.</p>
+            <p className="text-xs text-violet-300">Live version: an SMS-forwarder app on an Android phone POSTs to <code>/api/ingest/sms</code> with a secret token — the "Live setup" below generates it and even sends a test SMS through the real webhook.</p>
           </div>
         </div>
       )}
-      <details open={!judge} className={judge ? 'rounded-lg bg-slate-50 p-3' : ''}>
+      <details open={!judge} className={judge ? 'rounded-lg bg-surface p-3' : ''}>
       {judge && <summary className="cursor-pointer text-sm font-medium">Live setup with a real phone (webhook + token)</summary>}
       <div className="space-y-4">
         {!token && (
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={() => gen.mutate()} disabled={gen.isPending}>{src.has_token ? 'Generate new token' : 'Get my SMS token'}</Button>
             {src.has_token && <Button variant="danger" onClick={() => disconnect.mutate()}>Disconnect</Button>}
-            {src.has_token && <span className="text-xs text-slate-500">A new token replaces the old one on your phone.</span>}
+            {src.has_token && <span className="text-xs text-muted">A new token replaces the old one on your phone.</span>}
           </div>
         )}
         {token && (
-          <div className="space-y-3 rounded-xl border border-amber-200 bg-amber-50/50 p-4">
+          <div className="space-y-3 rounded-xl border border-amber-400/30 bg-amber-500/10 p-4">
             <Notice tone="warn">Copy this token now — it's shown only once.</Notice>
             <CopyField label="Webhook URL (HTTP POST)" value={src.webhook_url} />
             <CopyField label="Header: X-Ingest-Token" value={token} />
             <div>
-              <div className="text-xs font-medium text-slate-500">Send a test SMS through the real webhook</div>
+              <div className="text-xs font-medium text-muted">Send a test SMS through the real webhook</div>
               <div className="mt-1 flex flex-col gap-2 sm:flex-row">
                 <input value={testText} onChange={(e) => setTestText(e.target.value)} aria-label="Test SMS text"
-                  className="min-h-11 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                  className="min-h-11 flex-1 rounded-lg border border-line px-3 py-2 text-sm" />
                 <Button onClick={() => test.mutate()} disabled={test.isPending}>Send test</Button>
               </div>
               <div className="mt-2"><ResultNote r={result} /></div>
             </div>
           </div>
         )}
-        <p className="text-sm text-slate-600">Last SMS received: {when(src.last_received_at)}</p>
-        <details className="rounded-lg bg-slate-50 p-3 text-sm">
+        <p className="text-sm text-ink-2">Last SMS received: {when(src.last_received_at)}</p>
+        <details className="rounded-lg bg-surface p-3 text-sm">
           <summary className="cursor-pointer font-medium">Phone setup steps</summary>
-          <ol className="mt-2 list-decimal space-y-1 pl-5 text-slate-700">
+          <ol className="mt-2 list-decimal space-y-1 pl-5 text-ink-2">
             {src.checklist.map((s) => <li key={s}>{s}</li>)}
           </ol>
-          <p className="mt-2 text-xs text-slate-500">{src.caveat}</p>
+          <p className="mt-2 text-xs text-muted">{src.caveat}</p>
         </details>
         {src.webhook_url.includes('localhost') && (
-          <p className="text-xs text-amber-700">Your phone can't reach "localhost". Run a tunnel (ngrok/cloudflared) and set PUBLIC_BASE_URL to use a real phone.</p>
+          <p className="text-xs text-amber-300">Your phone can't reach "localhost". Run a tunnel (ngrok/cloudflared) and set PUBLIC_BASE_URL to use a real phone.</p>
         )}
       </div>
       </details>
@@ -313,7 +313,7 @@ function OtherInputs() {
       setManRes('Added to your bills.'); setManual({ biller: '', type: 'OTHER', amount: '', due_date: '' }); invalidate()
     } catch (e) { setManRes(errText(e)) }
   }
-  const field = 'min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-sm'
+  const field = 'min-h-11 rounded-lg border border-line px-3 py-2 text-sm'
 
   return (
     <Card icon="📎" title="Other ways to add" subtitle="Fallbacks when a bill didn't come through automatically.">
@@ -322,7 +322,7 @@ function OtherInputs() {
           <h3 className="text-sm font-semibold">Photo or PDF of a bill</h3>
           <input type="file" accept="application/pdf,image/png,image/jpeg" aria-label="Upload bill"
             onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} className="block w-full text-sm" />
-          <p className="text-xs text-slate-500">Up to 10 MB.</p>
+          <p className="text-xs text-muted">Up to 10 MB.</p>
           <ResultNote r={upRes} />
           {upErr && <Notice tone="error">{upErr}</Notice>}
         </div>
@@ -338,13 +338,13 @@ function OtherInputs() {
               <option key={t} value={t}>{t.replace(/_/g, ' ').toLowerCase()}</option>)}
           </select>
           <Button type="submit" variant="secondary" className="w-full">Add bill</Button>
-          {manRes && <p className="text-xs text-slate-600">{manRes}</p>}
+          {manRes && <p className="text-xs text-ink-2">{manRes}</p>}
         </form>
         <div className="space-y-2">
           <h3 className="text-sm font-semibold">Bank statement (CSV)</h3>
           <input type="file" accept=".csv,application/pdf" aria-label="Upload bank statement"
             onChange={(e) => e.target.files?.[0] && statement(e.target.files[0])} className="block w-full text-sm" />
-          <p className="text-xs text-slate-500">Finds repeating payments like Netflix. Only merchant, amount and date are kept.</p>
+          <p className="text-xs text-muted">Finds repeating payments like Netflix. Only merchant, amount and date are kept.</p>
           {stRes && <Notice tone="info">{stRes}</Notice>}
         </div>
       </div>
@@ -354,7 +354,7 @@ function OtherInputs() {
 
 export default function Connect() {
   const sources = useQuery({ queryKey: ['sources'], queryFn: () => api<Source[]>('/sources') })
-  if (sources.isLoading) return <p className="text-slate-500">Loading…</p>
+  if (sources.isLoading) return <p className="text-muted">Loading…</p>
   if (sources.isError) return <Notice tone="error">Couldn't load your sources. <button className="underline" onClick={() => sources.refetch()}>Retry</button></Notice>
   const by = Object.fromEntries((sources.data ?? []).map((s) => [s.kind, s])) as { GMAIL: GmailSource; SMS: SmsSource; WHATSAPP: WhatsAppSource }
   const done = [by.GMAIL.status === 'CONNECTED', by.SMS.status === 'CONNECTED', !!by.WHATSAPP.phone_e164].filter(Boolean).length
@@ -363,7 +363,7 @@ export default function Connect() {
     <div className="space-y-5">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Connect your sources</h1>
-        <p className="text-slate-600">One-time setup. After this, bills are collected automatically. <b>{done} of 3</b> connected.</p>
+        <p className="text-ink-2">One-time setup. After this, bills are collected automatically. <b>{done} of 3</b> connected.</p>
       </div>
       <GmailCard src={by.GMAIL} />
       <WhatsAppCard src={by.WHATSAPP} />

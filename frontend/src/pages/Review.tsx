@@ -43,36 +43,36 @@ function ConfirmationCard({ c }: { c: Confirmation }) {
   })
 
   const pick = (key: 'amount' | 'due_date', v: string | undefined) => v && setForm({ ...form, [key]: v })
-  const input = 'min-h-11 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm'
+  const input = 'min-h-11 w-full rounded-lg border border-line px-3 py-2 text-sm'
 
   return (
-    <article className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm">
+    <article className="rounded-2xl border border-amber-400/30 bg-card p-5 shadow-sm">
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="amber">{pretty(c.reason)}</Badge>
         <OriginBadge origin={c.origin} />
         {(c.draft.sources ?? [c.source_kind]).map((k) => <Badge key={k}>via {pretty(k)}</Badge>)}
         {(c.draft.sources?.length ?? 0) > 1 && <Badge tone="sky">Same bill from {c.draft.sources!.length} channels — shown once</Badge>}
         {c.draft.trust && <TrustBadge label={c.draft.trust.label} />}
-        <span className="ml-auto text-xs text-slate-500">{when(c.created_at)}</span>
+        <span className="ml-auto text-xs text-muted">{when(c.created_at)}</span>
       </div>
-      <p className="mt-2 text-sm text-slate-700">{REASON_TEXT[c.reason] ?? 'Please check these details.'}</p>
+      <p className="mt-2 text-sm text-ink-2">{REASON_TEXT[c.reason] ?? 'Please check these details.'}</p>
 
       {mismatches.length > 0 && llm && rules && (
         <div className="mt-3 overflow-x-auto">
           <table className="w-full text-sm">
-            <thead><tr className="text-left text-xs text-slate-500"><th className="py-1">Field</th><th>AI reader</th><th>Rule reader</th></tr></thead>
+            <thead><tr className="text-left text-xs text-muted"><th className="py-1">Field</th><th>AI reader</th><th>Rule reader</th></tr></thead>
             <tbody>
               {mismatches.map((m) => {
                 const key = m === 'biller_norm' ? 'biller' : m
                 const fmt = (v: string) => (m === 'amount' ? money(v) : m === 'due_date' ? day(v) : v)
                 return (
-                  <tr key={m} className="border-t border-slate-100">
+                  <tr key={m} className="border-t border-line">
                     <td className="py-2 font-medium">{pretty(key)}</td>
                     {[llm[key], rules[key]].map((v, i) => (
                       <td key={i}>
                         {(m === 'amount' || m === 'due_date') ? (
-                          <button className="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-50" onClick={() => pick(m, v)}>
-                            {fmt(v)} <span className="text-xs text-slate-500">use</span>
+                          <button className="rounded-lg border border-line px-3 py-1.5 hover:bg-raised" onClick={() => pick(m, v)}>
+                            {fmt(v)} <span className="text-xs text-muted">use</span>
                           </button>
                         ) : fmt(v)}
                       </td>
@@ -86,17 +86,17 @@ function ConfirmationCard({ c }: { c: Confirmation }) {
       )}
 
       {c.draft.trust && c.draft.trust.reasons.length > 0 && (
-        <ul className="mt-3 list-disc pl-5 text-xs text-slate-600">{c.draft.trust.reasons.map((r) => <li key={r}>{r}</li>)}</ul>
+        <ul className="mt-3 list-disc pl-5 text-xs text-ink-2">{c.draft.trust.reasons.map((r) => <li key={r}>{r}</li>)}</ul>
       )}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-4">
-        <label className="sm:col-span-2"><span className="text-xs font-medium text-slate-500">Biller</span>
+        <label className="sm:col-span-2"><span className="text-xs font-medium text-muted">Biller</span>
           <input className={input} value={form.biller} onChange={(e) => setForm({ ...form, biller: e.target.value })} /></label>
-        <label><span className="text-xs font-medium text-slate-500">Amount ₹ {mismatches.includes('amount') && <b className="text-amber-700">(choose)</b>}</span>
+        <label><span className="text-xs font-medium text-muted">Amount ₹ {mismatches.includes('amount') && <b className="text-amber-300">(choose)</b>}</span>
           <input className={input} inputMode="decimal" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></label>
-        <label><span className="text-xs font-medium text-slate-500">{f.message_kind === 'RECEIPT' || f.message_kind === 'PAYMENT_CONFIRMATION' ? 'Paid on' : 'Due date'} {mismatches.includes('due_date') && <b className="text-amber-700">(choose)</b>}</span>
+        <label><span className="text-xs font-medium text-muted">{f.message_kind === 'RECEIPT' || f.message_kind === 'PAYMENT_CONFIRMATION' ? 'Paid on' : 'Due date'} {mismatches.includes('due_date') && <b className="text-amber-300">(choose)</b>}</span>
           <input className={input} type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} /></label>
-        <label className="sm:col-span-2"><span className="text-xs font-medium text-slate-500">Type</span>
+        <label className="sm:col-span-2"><span className="text-xs font-medium text-muted">Type</span>
           <select className={input} value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
             {TYPES.map((t) => <option key={t} value={t}>{pretty(t)}</option>)}
           </select></label>
@@ -117,18 +117,18 @@ function FlaggedCard({ item }: { item: Flagged }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['flagged'] }),
   })
   return (
-    <article className="rounded-2xl border border-red-200 bg-white p-5 shadow-sm">
+    <article className="rounded-2xl border border-red-400/30 bg-card p-5 shadow-sm">
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="red">⚠ Suspicious — don't click its links</Badge>
         <OriginBadge origin={item.origin} />
         <Badge>via {pretty(item.source_kind)}</Badge>
-        <span className="ml-auto text-xs text-slate-500">Risk {item.risk_score}/100</span>
+        <span className="ml-auto text-xs text-muted">Risk {item.risk_score}/100</span>
       </div>
       <p className="mt-2 text-sm">
         Claims to be <b>{item.claimed_biller ?? 'unknown'}</b> asking for <b className="num">{money(item.claimed_amount)}</b>
-        {item.sender && <> from <code className="rounded bg-slate-100 px-1">{item.sender}</code></>}. It was <b>not</b> added to your bills.
+        {item.sender && <> from <code className="rounded bg-raised px-1">{item.sender}</code></>}. It was <b>not</b> added to your bills.
       </p>
-      <ul className="mt-2 list-disc pl-5 text-sm text-slate-700">{item.reasons.map((r) => <li key={r}>{r}</li>)}</ul>
+      <ul className="mt-2 list-disc pl-5 text-sm text-ink-2">{item.reasons.map((r) => <li key={r}>{r}</li>)}</ul>
       <Button className="mt-3" variant="secondary" onClick={() => dismiss.mutate()}>Dismiss</Button>
     </article>
   )
@@ -138,14 +138,14 @@ export default function Review() {
   const [tab, setTab] = useState<'confirm' | 'suspicious'>('confirm')
   const confs = useQuery({ queryKey: ['confirmations'], queryFn: () => api<Confirmation[]>('/confirmations'), refetchInterval: 30_000 })
   const flagged = useQuery({ queryKey: ['flagged'], queryFn: () => api<Flagged[]>('/flagged'), refetchInterval: 30_000 })
-  const tabCls = (on: boolean) => `min-h-11 rounded-lg px-4 py-2 text-sm font-medium ${on ? 'bg-slate-900 text-white' : 'bg-white border border-slate-300'}`
+  const tabCls = (on: boolean) => `min-h-11 rounded-lg px-4 py-2 text-sm font-medium ${on ? 'bg-gold text-bg font-semibold' : 'bg-card border border-line'}`
   const active = tab === 'confirm' ? confs : flagged
 
   return (
     <div className="space-y-5">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Review</h1>
-        <p className="text-slate-600">Anything we weren't sure about waits here — nothing uncertain is added silently.</p>
+        <p className="text-ink-2">Anything we weren't sure about waits here — nothing uncertain is added silently.</p>
       </div>
       <div className="flex gap-2" role="tablist">
         <button role="tab" aria-selected={tab === 'confirm'} className={tabCls(tab === 'confirm')} onClick={() => setTab('confirm')}>
@@ -155,15 +155,15 @@ export default function Review() {
           Suspicious ({flagged.data?.length ?? 0})
         </button>
       </div>
-      {active.isLoading && <p className="text-slate-500">Loading…</p>}
+      {active.isLoading && <p className="text-muted">Loading…</p>}
       {active.isError && <Notice tone="error">Couldn't load. <button className="underline" onClick={() => active.refetch()}>Retry</button></Notice>}
       {tab === 'confirm' && confs.data?.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-600">
+        <div className="rounded-2xl border border-dashed border-line p-8 text-center text-ink-2">
           All clear. New items appear here as they arrive. <Link to="/connect" className="font-semibold underline">Connect a source</Link>
         </div>
       )}
       {tab === 'suspicious' && flagged.data?.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-600">No suspicious messages.</div>
+        <div className="rounded-2xl border border-dashed border-line p-8 text-center text-ink-2">No suspicious messages.</div>
       )}
       <div className="space-y-4">
         {tab === 'confirm' && confs.data?.map((c) => <ConfirmationCard key={c.id} c={c} />)}

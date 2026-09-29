@@ -55,13 +55,13 @@ export default function Login() {
     }
   }
 
-  const input = 'w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-900'
+  const input = 'w-full rounded-lg border border-line bg-card px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-gold/40 focus:border-gold/60'
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
         <h1 className="text-3xl font-bold tracking-tight">Lifeline</h1>
-        <p className="mt-1 text-slate-600">All your bills, renewals and dues in one place — collected automatically.</p>
+        <p className="mt-1 text-ink-2">All your bills, renewals and dues in one place — collected automatically.</p>
 
         {googleMock && (
           <a href="/api/auth/google/start"
@@ -69,22 +69,22 @@ export default function Login() {
             🎓 Enter judge demo — no sign-up
           </a>
         )}
-        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="mt-6 rounded-2xl border border-line bg-card p-6 shadow-sm">
           <a
             href="/api/auth/google/start"
-            className="flex min-h-11 w-full items-center justify-center gap-3 rounded-lg border border-slate-300 bg-white px-4 py-2.5 font-medium hover:bg-slate-50"
+            className="flex min-h-11 w-full items-center justify-center gap-3 rounded-lg border border-line bg-card px-4 py-2.5 font-medium hover:bg-raised"
           >
             <GoogleIcon /> Continue with Google
           </a>
           {googleMock && (
-            <p className="mt-2 text-xs text-violet-700">
+            <p className="mt-2 text-xs text-violet-300">
               Judge mode: Google keys aren't set, so this signs you in as a demo Google user. With keys it opens the
               real Google account picker — <a href="/proof" className="underline">see it live</a>.
             </p>
           )}
 
-          <div className="my-5 flex items-center gap-3 text-xs text-slate-400">
-            <div className="h-px flex-1 bg-slate-200" /> or with email <div className="h-px flex-1 bg-slate-200" />
+          <div className="my-5 flex items-center gap-3 text-xs text-muted">
+            <div className="h-px flex-1 bg-line" /> or with email <div className="h-px flex-1 bg-line" />
           </div>
 
           <form onSubmit={submit} className="space-y-3">
@@ -102,15 +102,15 @@ export default function Login() {
               <span className="text-sm font-medium">Password</span>
               <input className={input} type="password" required minLength={8} value={password}
                 onChange={(e) => setPassword(e.target.value)} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} />
-              {mode === 'register' && <span className="text-xs text-slate-500">At least 8 characters</span>}
+              {mode === 'register' && <span className="text-xs text-muted">At least 8 characters</span>}
             </label>
-            {err && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{err}</p>}
-            <button disabled={busy} className="min-h-11 w-full rounded-lg bg-slate-900 px-4 py-2.5 font-medium text-white hover:bg-slate-800 disabled:opacity-60">
+            {err && <p role="alert" className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300">{err}</p>}
+            <button disabled={busy} className="min-h-11 w-full rounded-lg bg-black px-4 py-2.5 font-medium text-white hover:bg-gold-2 disabled:opacity-60">
               {busy ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}
             </button>
           </form>
           <button
-            className="mt-4 w-full text-sm text-slate-600 hover:underline"
+            className="mt-4 w-full text-sm text-ink-2 hover:underline"
             onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setErr(null) }}
           >
             {mode === 'login' ? "New here? Create an account" : 'Already have an account? Sign in'}

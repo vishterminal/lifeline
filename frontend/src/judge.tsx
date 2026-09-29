@@ -56,10 +56,10 @@ export function JudgeBanner() {
   })
   if (!judge) return null
   return (
-    <div className="border-b border-violet-200 bg-violet-50">
+    <div className="border-b border-violet-400/30 bg-violet-500/10">
       <div className="mx-auto max-w-5xl px-4 py-3">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="min-w-0 flex-1 text-sm text-violet-950">
+          <div className="min-w-0 flex-1 text-sm text-violet-300">
             <b>🎓 Judge demo mode.</b> No Google/Twilio keys are configured, so Gmail, WhatsApp and SMS run on
             realistic sample messages through the <b>real</b> pipeline. With keys in <code>.env</code> the same
             screens connect a live Gmail inbox, WhatsApp number and SMS forwarder —{' '}
@@ -71,12 +71,12 @@ export function JudgeBanner() {
           </div>
         </div>
         {open && log.length > 0 && (
-          <div className="mt-3 rounded-xl bg-white p-3 text-sm shadow-sm" aria-live="polite">
+          <div className="mt-3 rounded-xl bg-card p-3 text-sm shadow-sm" aria-live="polite">
             <ol className="space-y-1">
               {log.map((m, i) => <li key={i}>{m === 'Done.' ? '✅' : '•'} {m}</li>)}
             </ol>
             {log.at(-1) === 'Done.' && (
-              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
                 <span>Next: confirm the TNEB bill (it arrived by 3 channels, shown once), then send the payment SMS.</span>
                 <Button onClick={() => nav('/inbox')}>Open Review →</Button>
                 <Button variant="ghost" onClick={() => setOpen(false)}>Close</Button>
