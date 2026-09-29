@@ -159,6 +159,9 @@ export function SmsSimulator() {
   const uid = me.data?.user.id
   const fx = useQuery({ queryKey: ['fixtures'], queryFn: () => api<Fixtures>('/demo/fixtures') })
   const confs = useQuery({ queryKey: ['confirmations'], queryFn: () => api<Confirmation[]>('/confirmations') })
+  // Server truth (works for messages forwarded by 'Run full demo' too); local memory covers OTPs,
+  // which the server deliberately doesn't remember.
+  const status = useQuery({ queryKey: ['sms-status'], queryFn: () => api<Record<string, { outcome: string; confirmation_id: string | null; pending: boolean }>>('/demo/sms-status') })
   const [fwd, setFwd] = useState<Forwarded>({})
   const [flash, setFlash] = useFlash<{ title: string; text: string }>()
   useEffect(() => { setFwd(loadForwarded(uid)) }, [uid])
@@ -180,11 +183,14 @@ export function SmsSimulator() {
   // A forwarded SMS leaves the phone once it's handled: right away if nothing needs you,
   // or as soon as you've confirmed or rejected it in Review.
   const isDone = (id: string) => {
+    const srv = status.data?.[id]
+    if (srv) return !srv.pending
     const f = fwd[id]
     if (!f) return false
     if (f.outcome !== 'NEEDS_CONFIRMATION') return true
     return !!f.confirmation_id && confs.isSuccess && !pendingIds.has(f.confirmation_id)
   }
+  const isForwarded = (id: string) => !!status.data?.[id] || !!fwd[id]
   const all = fx.data?.sms ?? []
   const inbox = all.filter((s) => !isDone(s.id))
   const handled = all.length - inbox.length
@@ -201,7 +207,7 @@ export function SmsSimulator() {
       </div>
       <ul className="flex-1 overflow-y-auto bg-[#121212] pb-10">
         {inbox.map((s, i) => {
-          const f = fwd[s.id]
+          const f = isForwarded(s.id)
           return (
             <li key={s.id} className="border-t border-white/5 px-4 py-3 transition-colors hover:bg-white/[0.04]">
               <div className="flex gap-3">

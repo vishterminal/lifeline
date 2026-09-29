@@ -29,6 +29,10 @@ function ConfirmationCard({ c }: { c: Confirmation }) {
   const [err, setErr] = useState<string | null>(null)
   const resolve = useMutation({
     mutationFn: (action: 'confirm' | 'reject') => {
+      if (action === 'confirm') {
+        const missing = mismatches.map((m) => (m === 'biller_norm' ? 'biller' : m)).filter((k) => !form[k as keyof typeof form])
+        if (missing.length) return Promise.reject(new ApiError(422, 'CHOOSE', `Our two readers disagreed on the ${missing.map(pretty).join(' and ').toLowerCase()} — tap one of the two values above (or type the right one), then Confirm.`))
+      }
       const fields: Record<string, unknown> = {}
       if (action === 'confirm') {
         if (form.biller !== (f.biller ?? '') || mismatches.includes('biller_norm')) fields.biller = form.biller
@@ -38,7 +42,7 @@ function ConfirmationCard({ c }: { c: Confirmation }) {
       }
       return api(`/confirmations/${c.id}/resolve`, { method: 'POST', json: action === 'confirm' ? { action, fields } : { action } })
     },
-    onSuccess: () => ['confirmations', 'obligations', 'bills'].forEach((k) => qc.invalidateQueries({ queryKey: [k] })),
+    onSuccess: () => ['confirmations', 'obligations', 'bills', 'sms-status', 'flagged'].forEach((k) => qc.invalidateQueries({ queryKey: [k] })),
     onError: (e) => setErr(e instanceof ApiError ? e.message : 'Failed'),
   })
 

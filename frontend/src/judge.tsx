@@ -20,7 +20,7 @@ export function useJudgeMode() {
 }
 
 export function invalidateAll(qc: ReturnType<typeof useQueryClient>) {
-  ;['sources', 'confirmations', 'flagged', 'obligations', 'bills', 'events', 'me', 'inbox'].forEach((k) =>
+  ;['sources', 'confirmations', 'flagged', 'obligations', 'bills', 'events', 'me', 'inbox', 'sms-status'].forEach((k) =>
     qc.invalidateQueries({ queryKey: [k] }))
 }
 

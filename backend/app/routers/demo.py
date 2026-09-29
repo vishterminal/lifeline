@@ -57,6 +57,27 @@ def fixtures():
     }
 
 
+@router.get("/sms-status")
+def sms_status(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """What happened to each sample SMS for this user (drives the phone simulator):
+    not forwarded / waiting for review / handled. Looked up by content hash, the same
+    way the pipeline de-duplicates, so it works whoever sent it (phone or 'Run full demo')."""
+    out = {}
+    for fid, (_, text, _) in SMS_FIXTURES.items():
+        h = pipeline.content_hash(render_fixture_text(text))
+        ev = db.scalar(select(IngestEvent).where(
+            IngestEvent.user_id == user.id, IngestEvent.content_hash == h, IngestEvent.outcome != "DUPLICATE",
+        ).order_by(IngestEvent.received_at))
+        if ev is None:
+            continue
+        pending = False
+        if ev.outcome == "NEEDS_CONFIRMATION" and ev.reference_id:
+            conf = db.get(PendingConfirmation, ev.reference_id)
+            pending = conf is not None and conf.status == "PENDING"
+        out[fid] = {"outcome": ev.outcome, "confirmation_id": ev.reference_id, "pending": pending}
+    return out
+
+
 @router.get("/inbox")
 def inbox(user: User = Depends(current_user)):
     """The sample Gmail inbox a judge 'connects' in demo mode."""
