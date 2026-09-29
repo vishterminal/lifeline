@@ -1,0 +1,15 @@
+{
+  "_note": "ILLUSTRATIVE PLACEHOLDERS ONLY. Every value is marked ESTIMATED with source_label 'PLACEHOLDER'. Replace with sourced figures before claiming them; a rule may be VERIFIED only if it has a source_label or source_url that is not a placeholder (enforced by the loader).",
+  "rules": [
+    {"obligation_type": "ELECTRICITY", "late_fee_flat": 50, "late_fee_pct": 0, "lapse_cost": null, "waiver_note": null, "verification": "ESTIMATED", "source_label": "PLACEHOLDER - replace with sourced value", "source_url": null},
+    {"obligation_type": "WATER", "late_fee_flat": 50, "late_fee_pct": 0, "lapse_cost": null, "waiver_note": null, "verification": "ESTIMATED", "source_label": "PLACEHOLDER - replace with sourced value", "source_url": null},
+    {"obligation_type": "GAS", "late_fee_flat": 50, "late_fee_pct": 0, "lapse_cost": null, "waiver_note": null, "verification": "ESTIMATED", "source_label": "PLACEHOLDER - replace with sourced value", "source_url": null},
+    {"obligation_type": "PHONE_INTERNET", "late_fee_flat": 100, "late_fee_pct": 0, "lapse_cost": null, "waiver_note": null, "verification": "ESTIMATED", "source_label": "PLACEHOLDER - replace with sourced value", "source_url": null},
+    {"obligation_type": "LOAN_EMI", "late_fee_flat": 500, "late_fee_pct": 2, "lapse_cost": null, "waiver_note": null, "verification": "ESTIMATED", "source_label": "PLACEHOLDER - replace with sourced value", "source_url": null},
+    {"obligation_type": "INSURANCE_VEHICLE", "late_fee_flat": 0, "late_fee_pct": 0, "lapse_cost": 5000, "waiver_note": null, "verification": "ESTIMATED", "source_label": "PLACEHOLDER - demo-scale lapse cost (fine + lost no-claim bonus)", "source_url": null},
+    {"obligation_type": "INSURANCE_OTHER", "late_fee_flat": 0, "late_fee_pct": 0, "lapse_cost": 2000, "waiver_note": null, "verification": "ESTIMATED", "source_label": "PLACEHOLDER - replace with sourced value", "source_url": null},
+    {"obligation_type": "PUC", "late_fee_flat": 0, "late_fee_pct": 0, "lapse_cost": 1000, "waiver_note": null, "verification": "ESTIMATED", "source_label": "PLACEHOLDER - demo-scale fine for an expired PUC", "source_url": null},
+    {"obligation_type": "DRIVING_LICENCE", "late_fee_flat": 0, "late_fee_pct": 0, "lapse_cost": 1000, "waiver_note": null, "verification": "ESTIMATED", "source_label": "PLACEHOLDER - replace with sourced value", "source_url": null},
+    {"obligation_type": "VEHICLE_COMPLIANCE", "late_fee_flat": 0, "late_fee_pct": 0, "lapse_cost": 2000, "waiver_note": null, "verification": "ESTIMATED", "source_label": "PLACEHOLDER - demo-scale fine for riding without valid documents", "source_url": null}
+  ]
+}

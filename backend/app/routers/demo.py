@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.deps import current_user
 from app.errors import ApiError
-from app.models import ChargeEvent, ConnectedSource, FlaggedItem, IngestEvent, Obligation, PendingConfirmation, User
+from app.models import ChargeEvent, Payment, ConnectedSource, FlaggedItem, IngestEvent, Obligation, PendingConfirmation, User
 from app.schemas import SimulateTextIn
 from app.services import gmail_service, pipeline, whatsapp_inbound
 from app.services.gmail_service import render_fixture_text
@@ -123,6 +123,8 @@ def simulate_whatsapp(body: SimulateTextIn, user: User = Depends(current_user), 
 def reset_demo(user: User = Depends(current_user), db: Session = Depends(get_db)):
     """Remove only DEMO items so the demo can be run again from scratch. REAL data is untouched."""
     counts = {}
+    demo_ids = select(Obligation.id).where(Obligation.user_id == user.id, Obligation.origin == "DEMO")
+    db.execute(delete(Payment).where(Payment.obligation_id.in_(demo_ids)))
     for model in (PendingConfirmation, FlaggedItem, ChargeEvent, Obligation):
         r = db.execute(delete(model).where(model.user_id == user.id, model.origin == "DEMO"))
         counts[model.__tablename__] = r.rowcount

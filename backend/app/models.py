@@ -214,3 +214,14 @@ class Consent(Base):
     kind: Mapped[str] = mapped_column(String(20))
     granted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class Payment(Base):
+    """Mocked one-tap pay (spec F17). No real money moves; is_mock is always True."""
+    __tablename__ = "payments"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    obligation_id: Mapped[str] = mapped_column(ForeignKey("obligations.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    amount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    is_mock: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

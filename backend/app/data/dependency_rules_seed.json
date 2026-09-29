@@ -1,0 +1,11 @@
+{
+  "_note": "Obligation Graph (spec F12). Hand-written, table-driven rules: adding a row adds a dependency, no code change. VEHICLE_COMPLIANCE is a virtual node (not a bill).",
+  "rules": [
+    {"from_type": "PUC", "to_type": "INSURANCE_VEHICLE", "relation": "BLOCKS_RENEWAL", "weight": 1.0,
+     "explanation": "Vehicle insurance can't be renewed without a valid PUC certificate."},
+    {"from_type": "INSURANCE_VEHICLE", "to_type": "VEHICLE_COMPLIANCE", "relation": "AFFECTS", "weight": 1.0,
+     "explanation": "Riding without valid insurance is an offence and can be fined at a checkpoint."},
+    {"from_type": "PUC", "to_type": "VEHICLE_COMPLIANCE", "relation": "AFFECTS", "weight": 0.5,
+     "explanation": "Riding without a valid PUC certificate can be fined at a checkpoint."}
+  ]
+}

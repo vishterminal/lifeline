@@ -15,7 +15,7 @@ from app.config import get_settings
 from app.db import init_db
 from app.jobs import scheduler
 from app.ratelimit import limiter
-from app.routers import auth, demo, google_login, ingest, review, sources
+from app.routers import auth, bills, demo, google_login, ingest, review, sources
 from app.services import upload_service
 
 # Logs carry ids, outcomes and hashes only — never message bodies or tokens.
@@ -59,7 +59,7 @@ async def request_id(request: Request, call_next):
     return response
 
 
-for r in (auth.router, google_login.router, sources.router, ingest.router, review.router, demo.router):
+for r in (auth.router, google_login.router, sources.router, ingest.router, review.router, bills.router, demo.router):
     app.include_router(r, prefix="/api")
 
 
