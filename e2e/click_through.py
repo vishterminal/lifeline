@@ -34,11 +34,11 @@ with sync_playwright() as p:
     import time
     judge_email = f"judge{int(time.time())}@lifeline-judges.com"
 
-    @step("Landing page: Create new account first, Google button, sign-in toggle, no judge button")
+    @step("Landing page: Create new account first, no Google button, sign-in toggle, no judge button")
     def _():
         page.goto(BASE + "/login")
         expect(page.get_by_role("heading", name="Create new account")).to_be_visible()
-        expect(page.get_by_role("link", name=re.compile("Continue with Google"))).to_have_attribute("href", "/api/auth/google/start")
+        expect(page.get_by_text("Continue with Google")).to_have_count(0)
         expect(page.get_by_text("Enter judge demo")).to_have_count(0)
         expect(page.get_by_text("Welcome back")).to_have_count(0)
         page.get_by_role("button", name="Sign in", exact=True).click()
