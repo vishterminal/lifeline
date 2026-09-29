@@ -90,11 +90,18 @@ async def ingest_upload(file: UploadFile = File(...), user: User = Depends(curre
 def ingest_manual(body: ManualIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
     match = normalize(body.biller, db)
     otype = body.type if body.type != "OTHER" or not (match and match.alias) else match.alias.default_type
-    res = pipeline.commit(db, user.id, {
+    fields = {
         "biller": body.biller.strip(), "biller_norm": match.canonical if match else None, "type": otype,
         "amount": body.amount, "due_date": body.due_date, "vehicle_ref": body.vehicle_ref,
         "message_kind": "RENEWAL_NOTICE" if body.recurring else "DUE_NOTICE", "recurrence_hint": body.recurring,
-    }, source_kind="MANUAL", trust_label="NOT_APPLICABLE", confidence=1.0, agreed=True)
+    }
+    if body.review:
+        draft = {**fields, "amount": str(body.amount) if body.amount is not None else None,
+                 "due_date": body.due_date.isoformat()}
+        conf = pipeline.create_confirmation(db, user.id, "MANUAL", "REAL", "MANUAL_ENTRY", draft)
+        db.commit()
+        return {"outcome": "NEEDS_CONFIRMATION", "confirmation_id": conf.id, "obligation": None}
+    res = pipeline.commit(db, user.id, fields, source_kind="MANUAL", trust_label="NOT_APPLICABLE", confidence=1.0, agreed=True)
     db.commit()
     from app.models import Obligation
     from app.schemas import ObligationOut

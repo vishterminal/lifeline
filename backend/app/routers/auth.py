@@ -21,7 +21,9 @@ def register(request: Request, body: RegisterIn, db: Session = Depends(get_db)):
     email = body.email.lower()
     if db.scalar(select(User.id).where(func.lower(User.email) == email)):
         raise ApiError(409, "An account with this email already exists")
-    user = User(email=email, password_hash=hash_password(body.password), name=body.name)
+    # IMPLEMENTATION DECISION (hackathon build): email/password accounts are judge demo accounts —
+    # sources run on sample data. Real, live accounts sign in with Google.
+    user = User(email=email, password_hash=hash_password(body.password), name=body.name, is_demo=True)
     db.add(user)
     db.commit()
     return {"token": create_jwt(user.id), "user": user}

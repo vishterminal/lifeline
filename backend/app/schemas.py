@@ -75,6 +75,7 @@ class ManualIn(BaseModel):
     due_date: date
     vehicle_ref: str | None = Field(None, max_length=40)
     recurring: Literal["MONTHLY", "ANNUAL"] | None = None
+    review: bool = False  # send to Review for a final check instead of saving straight away
 
     @field_validator("type")
     @classmethod
