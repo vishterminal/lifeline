@@ -129,7 +129,7 @@ def reset_demo(user: User = Depends(current_user), db: Session = Depends(get_db)
     # The audit log keeps only hashes; clear it so the same sample messages aren't seen as duplicates.
     db.execute(delete(IngestEvent).where(IngestEvent.user_id == user.id))
     gm = db.scalar(select(ConnectedSource).where(ConnectedSource.user_id == user.id, ConnectedSource.kind == "GMAIL"))
-    if gm is not None and not gmail_service.is_live():
+    if gm is not None and not gmail_service.is_live(user):
         db.delete(gm)  # sample inbox can be "connected" again
     db.commit()
     return {"removed": counts}

@@ -53,6 +53,7 @@ export interface User {
   balance_as_of: string | null
   allow_cloud_image_processing: boolean
   whatsapp_last_inbound_at: string | null
+  is_demo?: boolean
 }
 
 export interface GmailSource {

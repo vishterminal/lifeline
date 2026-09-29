@@ -5,7 +5,7 @@ import { Badge, Notice, OriginBadge, OUTCOME_TEXT, TrustBadge } from '../ui'
 
 const ICON: Record<string, string> = {
   ELECTRICITY: '⚡', WATER: '💧', GAS: '🔥', PHONE_INTERNET: '📶', INSURANCE_VEHICLE: '🏍️', INSURANCE_OTHER: '🛡️',
-  PUC: '🌫️', DRIVING_LICENCE: '🪪', SUBSCRIPTION: '🔁', LOAN_EMI: '🏦', APPOINTMENT: '📅',
+  PUC: '🚘', DRIVING_LICENCE: '🪪', SUBSCRIPTION: '🔁', LOAN_EMI: '🏦', APPOINTMENT: '📅',
 }
 
 function daysLeft(iso: string) {
@@ -49,7 +49,7 @@ export default function Bills() {
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     <OriginBadge origin={o.origin} />
-                    <TrustBadge label={o.trust_label} />
+                    {o.trust_label === 'NEW_BILLER_CONFIRM' ? <Badge tone="green">✓ Confirmed by you</Badge> : <TrustBadge label={o.trust_label} />}
                     {o.is_recurring && <Badge tone="sky">🔁 Recurring</Badge>}
                     {o.price_changed && <Badge tone="amber">Price changed</Badge>}
                     {o.status === 'OVERDUE' && <Badge tone="red">Overdue</Badge>}

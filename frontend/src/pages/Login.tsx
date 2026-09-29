@@ -39,6 +39,20 @@ export default function Login() {
   })
   const googleMock = health.data?.connectors.google_login === 'mock'
 
+  async function enterJudgeDemo() {
+    setErr(null)
+    setBusy(true)
+    try {
+      const r = await api<{ token: string; user: User }>('/auth/demo', { method: 'POST' })
+      auth.set(r.token)
+      nav('/overview')
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : 'Could not reach the server. Is the backend running on port 8000?')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     setErr(null)
@@ -85,12 +99,11 @@ export default function Login() {
 
         <div className="mx-auto w-full max-w-md">
           <div className="mb-6 lg:hidden"><Logo /></div>
-          {googleMock && (
-            <a href="/api/auth/google/start"
-              className="mb-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gold px-4 py-3 font-semibold text-bg shadow-[0_12px_30px_-12px_rgb(255_209_0/0.8)] hover:bg-gold-2">
-              🎓 Enter judge demo — no sign-up
-            </a>
-          )}
+          <button onClick={enterJudgeDemo} disabled={busy}
+            className="mb-2 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gold px-4 py-3 font-semibold text-bg shadow-[0_12px_30px_-12px_rgb(255_209_0/0.8)] hover:bg-gold-2 disabled:opacity-60">
+            🎓 Enter judge demo — no sign-up
+          </button>
+          <p className="mb-4 text-center text-xs text-muted">For judges: a private demo account with sample Gmail, WhatsApp &amp; SMS. Real users sign in with Google below.</p>
           <div className="rounded-[var(--radius-card)] border border-line bg-card p-6 shadow-[var(--shadow-card)] sm:p-8">
             <h2 className="text-2xl font-bold tracking-tight">{mode === 'login' ? 'Welcome back' : 'Create your account'}</h2>
             <p className="mt-1 text-sm text-muted">{mode === 'login' ? 'Sign in to see what needs you.' : 'Takes a minute. Sources can be connected next.'}</p>

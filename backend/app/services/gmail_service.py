@@ -57,8 +57,9 @@ class EmailMessage:
     links: list[tuple[str, str]] = field(default_factory=list)
 
 
-def is_live() -> bool:
-    return get_settings().gmail_live
+def is_live(user: User | None = None) -> bool:
+    """Real Gmail only for real accounts; judge demo accounts always use the sample inbox."""
+    return get_settings().gmail_live and not (user is not None and user.is_demo)
 
 
 def get_source(db: Session, user: User) -> ConnectedSource:
@@ -75,7 +76,7 @@ def build_auth_url(db: Session, user: User) -> str:
     s = get_settings()
     src = get_source(db, user)
     src.oauth_state = secrets.token_urlsafe(32)
-    if not is_live():
+    if not is_live(user):
         # Mock: the "consent screen" is our own callback with a fake code.
         return "/api/sources/gmail/callback?" + urlencode({"code": "mock-code", "state": src.oauth_state})
     return AUTH_URL + "?" + urlencode({
@@ -97,7 +98,8 @@ def complete_oauth(db: Session, code: str, state: str) -> ConnectedSource:
     if src is None:
         raise PermissionError("invalid state")
     src.oauth_state = None  # single use
-    if is_live():
+    owner = db.get(User, src.user_id)
+    if is_live(owner):
         s = get_settings()
         r = httpx.post(TOKEN_URL, data={
             "code": code, "client_id": s.google_client_id, "client_secret": s.google_client_secret,
@@ -142,7 +144,7 @@ def _revoke(token: str | None) -> None:
 
 def disconnect(db: Session, user: User) -> None:
     src = get_source(db, user)
-    if src.encrypted_refresh_token and is_live():
+    if src.encrypted_refresh_token and is_live(user):
         _revoke(decrypt_secret(src.encrypted_refresh_token))
     src.encrypted_refresh_token = None
     src.status = "DISCONNECTED"
@@ -314,7 +316,7 @@ def sync(db: Session, user: User) -> dict:
     if src.status not in ("CONNECTED", "ERROR"):
         return {"fetched": 0, "saved": 0, "needs_review": 0, "flagged": 0, "status": src.status, "error": src.last_error}
     try:
-        msgs = fetch_live(src) if is_live() else fetch_mock(src)
+        msgs = fetch_live(src) if is_live(user) else fetch_mock(src)
     except NeedsReconnect as e:
         src.status, src.last_error = "NEEDS_RECONNECT", f"reconnect_required:{e}"
         return {"fetched": 0, "saved": 0, "needs_review": 0, "flagged": 0, "status": src.status, "error": src.last_error}
@@ -323,7 +325,7 @@ def sync(db: Session, user: User) -> dict:
         return {"fetched": 0, "saved": 0, "needs_review": 0, "flagged": 0, "status": src.status, "error": src.last_error}
     counts = {"fetched": len(msgs), "saved": 0, "needs_review": 0, "flagged": 0}
     items = []  # per-email result for the UI (sender + subject + outcome; nothing is stored)
-    origin = "REAL" if is_live() else "DEMO"
+    origin = "REAL" if is_live(user) else "DEMO"
     for m in sorted(msgs, key=lambda x: x.internal_ms):
         res = pipeline.process_incoming(db, user, "GMAIL", m.body, pipeline.IncomingMeta(
             sender=m.sender, sender_name=m.sender_name, auth_results=m.auth_results, links=m.links, origin=origin))
@@ -336,7 +338,7 @@ def sync(db: Session, user: User) -> dict:
         elif res.outcome == "SUSPICIOUS":
             counts["flagged"] += 1
         src.gmail_cursor_ms = max(src.gmail_cursor_ms or 0, m.internal_ms)
-    if not is_live():
+    if not is_live(user):
         # Fixture timestamps are relative to "now"; mark the mock inbox read up to now.
         src.gmail_cursor_ms = int(now_utc().timestamp() * 1000)
     src.status, src.last_error, src.last_sync_at = "CONNECTED", None, now_utc()

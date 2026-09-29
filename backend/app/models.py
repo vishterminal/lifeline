@@ -61,6 +61,8 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(320), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(200), nullable=False)
     google_sub: Mapped[str | None] = mapped_column(String(64), unique=True)  # "Continue with Google"
+    # Judge demo account: every source runs on sample data, even when live keys are configured.
+    is_demo: Mapped[bool] = mapped_column(Boolean, default=False)
     name: Mapped[str | None] = mapped_column(String(200))
     phone_e164: Mapped[str | None] = mapped_column(String(20), index=True)
     timezone: Mapped[str] = mapped_column(String(64), default="Asia/Kolkata")

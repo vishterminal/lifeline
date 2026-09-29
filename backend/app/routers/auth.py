@@ -27,6 +27,20 @@ def register(request: Request, body: RegisterIn, db: Session = Depends(get_db)):
     return {"token": create_jwt(user.id), "user": user}
 
 
+@router.post("/auth/demo", response_model=AuthOut, status_code=201)
+@limiter.limit(auth_limit)
+def judge_demo(request: Request, db: Session = Depends(get_db)):
+    """'Enter judge demo': a fresh private demo account (so judges never collide).
+    Its sources always run on sample data, even when live Google/Twilio keys exist."""
+    import secrets
+
+    user = User(email=f"judge-{secrets.token_hex(4)}@demo.lifeline", name="Judge",
+                password_hash=hash_password(secrets.token_urlsafe(24)), is_demo=True)
+    db.add(user)
+    db.commit()
+    return {"token": create_jwt(user.id), "user": user}
+
+
 @router.post("/auth/login", response_model=AuthOut)
 @limiter.limit(auth_limit)
 def login(request: Request, body: LoginIn, db: Session = Depends(get_db)):

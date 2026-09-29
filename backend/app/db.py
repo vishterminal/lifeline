@@ -63,6 +63,12 @@ def _add_missing_columns() -> None:
                 if col.name not in have:
                     ddl = col.type.compile(dialect=engine.dialect)
                     conn.execute(text(f'ALTER TABLE "{table.name}" ADD COLUMN "{col.name}" {ddl}'))
+                    have.add(col.name)
+                # Backfill existing rows with the column's scalar default (e.g. is_demo=False),
+                # so older rows never carry NULL where the code expects a value.
+                default = getattr(col.default, "arg", None)
+                if col.name in have and isinstance(default, (bool, int, float, str)):
+                    conn.execute(text(f'UPDATE "{table.name}" SET "{col.name}" = :v WHERE "{col.name}" IS NULL'), {"v": default})
 
 
 def init_db() -> None:

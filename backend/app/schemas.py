@@ -43,6 +43,7 @@ class UserOut(BaseModel):
     balance_as_of: datetime | None
     allow_cloud_image_processing: bool
     whatsapp_last_inbound_at: datetime | None
+    is_demo: bool = False
 
 
 class AuthOut(BaseModel):

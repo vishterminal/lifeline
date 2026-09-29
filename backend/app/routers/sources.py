@@ -44,13 +44,13 @@ def list_sources(user: User = Depends(current_user), db: Session = Depends(get_d
     window_open = bool(user.whatsapp_last_inbound_at and
                        now_utc() - _aware(user.whatsapp_last_inbound_at) < timedelta(hours=24))
     return [
-        {"kind": "GMAIL", "mode": "live" if gmail_service.is_live() else "mock",
+        {"kind": "GMAIL", "mode": "live" if gmail_service.is_live(user) else "mock",
          "status": gm.status if gm else "DISCONNECTED", "gmail_address": gm.gmail_address if gm else None,
          "last_sync_at": gm.last_sync_at if gm else None, "last_error": gm.last_error if gm else None},
         {"kind": "SMS", "status": sms.status if sms else "DISCONNECTED",
          "webhook_url": f"{s.public_base_url}/api/ingest/sms", "has_token": bool(sms and sms.ingest_token_hash),
          "last_received_at": sms.last_received_at if sms else None, "checklist": SMS_CHECKLIST, "caveat": SMS_CAVEAT},
-        {"kind": "WHATSAPP", "mode": "live" if s.twilio_live else "mock",
+        {"kind": "WHATSAPP", "mode": "live" if s.twilio_live and not user.is_demo else "mock",
          "status": wa.status if wa else ("LINKED" if user.phone_e164 else "DISCONNECTED"),
          "phone_e164": user.phone_e164, "sandbox_number": s.twilio_whatsapp_from.removeprefix("whatsapp:"),
          "sandbox_join_code": s.twilio_sandbox_join_code,
@@ -74,7 +74,7 @@ def _aware(dt):
 def gmail_connect(user: User = Depends(current_user), db: Session = Depends(get_db)):
     url = gmail_service.build_auth_url(db, user)
     db.commit()
-    return {"auth_url": url, "mode": "live" if gmail_service.is_live() else "mock"}
+    return {"auth_url": url, "mode": "live" if gmail_service.is_live(user) else "mock"}
 
 
 @router.get("/gmail/callback")

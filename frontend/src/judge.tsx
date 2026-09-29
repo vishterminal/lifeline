@@ -4,15 +4,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { api, type Health, type SyncResult } from './api'
+import { api, auth, type Health, type SyncResult, type User } from './api'
 import { Button } from './ui'
 
 export function useHealth() {
   return useQuery({ queryKey: ['health'], queryFn: () => api<Health>('/health'), staleTime: 60_000 })
 }
 
+/** Judge mode = this is a judge demo account, or the server has no live keys at all. */
 export function useJudgeMode() {
-  return useHealth().data?.judge_mode ?? false
+  const health = useHealth()
+  const me = useQuery({ queryKey: ['me'], queryFn: () => api<{ user: User }>('/auth/me'), enabled: !!auth.get() })
+  return (health.data?.judge_mode ?? false) || (me.data?.user.is_demo ?? false)
 }
 
 export function invalidateAll(qc: ReturnType<typeof useQueryClient>) {
@@ -65,9 +68,9 @@ export function JudgeBanner() {
       <div className="mx-auto max-w-5xl px-4 py-3">
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-0 flex-1 text-sm text-ink-2">
-            <b className="text-gold">🎓 Judge demo mode.</b> No Google/Twilio keys are configured, so Gmail, WhatsApp and SMS run on
-            realistic sample messages through the <b>real</b> pipeline. With keys in <code>.env</code> the same
-            screens connect a live Gmail inbox, WhatsApp number and SMS forwarder —{' '}
+            <b className="text-gold">🎓 Judge demo mode.</b> This is a private demo account: Gmail, WhatsApp and SMS run on
+            realistic sample messages through the <b>real</b> pipeline. Real accounts (<i>Continue with Google</i>) connect a
+            live Gmail inbox, WhatsApp number and SMS forwarder —{' '}
             <Link to="/proof" className="font-semibold text-gold underline">see it working live</Link>.
           </div>
           <div className="flex gap-2">
