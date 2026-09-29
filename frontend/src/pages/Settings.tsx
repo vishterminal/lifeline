@@ -37,9 +37,9 @@ export default function Settings() {
   return (
     <div>
       <PageHeader title="Settings" subtitle="Your profile, money snapshot and privacy choices." />
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid grid-cols-1 [&>*]:min-w-0 gap-5 lg:grid-cols-3">
         <Card title="Profile & money" subtitle="Used for the Overview balance and planning." className="lg:col-span-2">
-          <form className="grid gap-4 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); setMsg(null); save.mutate() }}>
+          <form className="grid grid-cols-1 [&>*]:min-w-0 gap-4 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); setMsg(null); save.mutate() }}>
             <label className={label}>Name
               <input className={`${inputCls} mt-1 w-full`} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoComplete="name" />
             </label>

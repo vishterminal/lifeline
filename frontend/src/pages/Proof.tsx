@@ -60,7 +60,7 @@ export default function Proof() {
         </ul>
       </section>
 
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid grid-cols-1 [&>*]:min-w-0 gap-5 md:grid-cols-2">
         {SHOTS.map((s) => <Shot key={s.file} s={s} />)}
       </div>
 

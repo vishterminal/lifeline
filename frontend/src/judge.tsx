@@ -67,7 +67,7 @@ export function JudgeBanner() {
     <div className="border-b border-gold/20 bg-gradient-to-r from-gold/10 via-surface to-surface">
       <div className="mx-auto max-w-5xl px-4 py-3">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="min-w-0 flex-1 text-sm text-ink-2">
+          <div className="min-w-0 flex-[1_1_20rem] text-sm text-ink-2">
             <b className="text-gold">🎓 Judge demo mode.</b> This is a private demo account: Gmail, WhatsApp and SMS run on
             realistic sample messages through the <b>real</b> pipeline. Real accounts (<i>Continue with Google</i>) connect a
             live Gmail inbox, WhatsApp number and SMS forwarder —{' '}

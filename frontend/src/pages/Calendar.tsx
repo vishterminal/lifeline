@@ -35,7 +35,7 @@ export default function CalendarPage() {
   return (
     <div>
       <PageHeader title="Calendar" subtitle="Every due date and renewal Lifeline has found, by day." />
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid grid-cols-1 [&>*]:min-w-0 gap-5 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <div className="mb-4 flex flex-wrap items-center gap-3">
             <h2 className="flex-1 text-xl font-semibold">{cursor.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</h2>

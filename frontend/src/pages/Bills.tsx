@@ -20,7 +20,7 @@ export default function Bills() {
   const events = useQuery({ queryKey: ['events'], queryFn: () => api<IngestEvent[]>('/ingest-events?limit=20'), refetchInterval: 30_000 })
 
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
+    <div className="grid grid-cols-1 [&>*]:min-w-0 gap-6 lg:grid-cols-3">
       <div className="space-y-4 lg:col-span-2">
         <div>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Bills</h1>

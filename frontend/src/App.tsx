@@ -76,7 +76,7 @@ function Shell() {
   useEffect(() => { window.scrollTo(0, 0) }, [loc.pathname])
 
   return (
-    <div className="min-h-screen bg-bg">
+    <div className="min-h-screen overflow-x-clip bg-bg">
       <header className="sticky top-0 z-20 border-b border-line bg-bg/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6">
           <Logo />

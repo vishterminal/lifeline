@@ -317,7 +317,7 @@ function OtherInputs() {
 
   return (
     <Card icon="📎" title="Other ways to add" subtitle="Fallbacks when a bill didn't come through automatically.">
-      <div className="grid gap-5 md:grid-cols-3">
+      <div className="grid grid-cols-1 [&>*]:min-w-0 gap-5 md:grid-cols-3">
         <div className="space-y-2">
           <h3 className="text-sm font-semibold">Photo or PDF of a bill</h3>
           <input type="file" accept="application/pdf,image/png,image/jpeg" aria-label="Upload bill"

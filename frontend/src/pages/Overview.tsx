@@ -63,7 +63,7 @@ export default function Overview() {
         actions={<Link to="/connect" className="inline-flex min-h-11 items-center rounded-xl border border-line-strong bg-surface/60 px-4 text-sm font-medium text-ink hover:border-gold/50">+ Add a source</Link>}
       />
 
-      <div className="grid gap-5 lg:grid-cols-12">
+      <div className="grid grid-cols-1 [&>*]:min-w-0 gap-5 lg:grid-cols-12">
         {/* LEFT: My money */}
         <div className="space-y-5 lg:col-span-3">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">My money</h2>
