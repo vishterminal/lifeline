@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, ApiError, auth, day, type FamilyContact, type Source, type User } from '../api'
+import { enablePush } from '../push'
 import { Button, Card, inputCls, Notice, PageHeader, StatusBadge } from '../ui'
 
 // Uses the existing GET/PUT /api/profile endpoints only.
@@ -38,8 +39,9 @@ export default function Settings() {
   return (
     <div>
       <PageHeader title="Settings" subtitle="Your profile, money snapshot and privacy choices." />
-      <div className="grid grid-cols-1 [&>*]:min-w-0 gap-5 lg:grid-cols-3">
-        <Card title="Profile & money" subtitle="Used for the Overview balance and planning." className="lg:col-span-2">
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-3 [&>*]:min-w-0">
+        <div className="space-y-5 lg:col-span-2">
+        <Card title="Profile & money" subtitle="Used for the Overview balance and planning.">
           <form className="grid grid-cols-1 [&>*]:min-w-0 gap-4 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); setMsg(null); save.mutate() }}>
             <label className={label}>Name
               <input className={`${inputCls} mt-1 w-full`} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoComplete="name" />
@@ -79,6 +81,11 @@ export default function Settings() {
             </div>
           </form>
         </Card>
+        <div className="grid grid-cols-1 items-start gap-5 md:grid-cols-2 [&>*]:min-w-0">
+          <NotificationsCard />
+          <FamilyCard />
+        </div>
+        </div>
 
         <div className="space-y-5">
           <Card title="Connected sources">
@@ -100,7 +107,6 @@ export default function Settings() {
               <li>• Gmail access is read-only and can be disconnected any time.</li>
             </ul>
           </Card>
-          <FamilyCard />
           <Button variant="secondary" className="w-full" onClick={() => { auth.clear(); nav('/login') }}>Sign out</Button>
           <DeleteAll />
         </div>
@@ -167,5 +173,32 @@ function DeleteAll() {
         {del.isPending ? 'Deleting…' : 'Delete everything'}
       </Button>
     </section>
+  )
+}
+
+
+function NotificationsCard() {
+  const [msg, setMsg] = useState<{ tone: 'ok' | 'error' | 'info'; text: string } | null>(null)
+  const status = useQuery({ queryKey: ['push-status'], queryFn: () => api<{ enabled: boolean; subscriptions: number }>('/push/status') })
+  const qc = useQueryClient()
+  const on = useMutation({
+    mutationFn: enablePush,
+    onSuccess: (t) => { setMsg({ tone: 'ok', text: t }); qc.invalidateQueries({ queryKey: ['push-status'] }) },
+    onError: (e) => setMsg({ tone: 'error', text: (e as Error).message }),
+  })
+  const test = useMutation({
+    mutationFn: () => api<{ delivered: number }>('/push/test', { method: 'POST' }),
+    onSuccess: (r) => setMsg({ tone: 'ok', text: `Test notification sent to ${r.delivered} browser(s).` }),
+    onError: (e) => setMsg({ tone: 'error', text: e instanceof ApiError ? e.message : 'Failed' }),
+  })
+  return (
+    <Card title="Notifications" subtitle="Get reminder pop-ups on this device, even when Lifeline isn't open.">
+      <p className="mb-3 text-sm text-muted">{status.data?.subscriptions ? `On for ${status.data.subscriptions} browser(s).` : 'Off on this device.'} On iPhone, add Lifeline to your Home Screen first.</p>
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={() => on.mutate()} disabled={on.isPending}>{on.isPending ? 'Enabling…' : 'Enable notifications'}</Button>
+        <Button variant="secondary" onClick={() => test.mutate()} disabled={test.isPending}>Send test</Button>
+      </div>
+      {msg && <div className="mt-3"><Notice tone={msg.tone}>{msg.text}</Notice></div>}
+    </Card>
   )
 }

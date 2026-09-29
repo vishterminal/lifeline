@@ -113,7 +113,7 @@ export function DemoPill() {
   return (
     <div className="relative">
       <button onClick={() => setOpen((o) => !o)} aria-expanded={open}
-        className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-gold/40 bg-gold/10 px-3 text-sm font-semibold text-gold hover:bg-gold/20">
+        className="inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-full border border-gold/40 bg-gold/10 px-3 text-sm font-semibold text-gold hover:bg-gold/20">
         🎓 <span className="hidden sm:inline">Judge demo</span>
       </button>
       {open && (

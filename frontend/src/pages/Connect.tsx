@@ -292,18 +292,34 @@ function UploadCard() {
   const [res, setRes] = useState<PipelineResult | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [progress, setProgress] = useState<string | null>(null)
   async function upload(file: File) {
     setErr(null); setRes(null); setBusy(true)
-    const fd = new FormData(); fd.append('file', file)
-    try { setRes(await api<PipelineResult>('/ingest/upload', { method: 'POST', body: fd })); invalidate() }
-    catch (e) { setErr(errText(e)) } finally { setBusy(false) }
+    try {
+      if (file.type.startsWith('image/')) {
+        // Read the photo on this device (OCR) — only the text leaves the browser, then it is masked server-side.
+        setProgress('Reading the photo on your device…')
+        const { recognize } = await import('tesseract.js')
+        const out = await recognize(file, 'eng', { logger: (m: { status: string; progress: number }) => {
+          if (m.status === 'recognizing text') setProgress(`Reading the photo on your device… ${Math.round(m.progress * 100)}%`)
+        } })
+        const text = out.data.text.trim()
+        if (text.length < 8) throw new ApiError(422, 'OCR', "Couldn't read enough text from that photo — try a sharper picture, or type it in.")
+        setRes(await api<PipelineResult>('/ingest/text', { method: 'POST', json: { text } }))
+      } else {
+        const fd = new FormData(); fd.append('file', file)
+        setRes(await api<PipelineResult>('/ingest/upload', { method: 'POST', body: fd }))
+      }
+      invalidate()
+    } catch (e) { setErr(errText(e)) } finally { setBusy(false); setProgress(null) }
   }
   return (
     <Card icon="📷" title="Photo or PDF of a bill" subtitle="Snap or upload a bill that didn't arrive by email, WhatsApp or SMS. Up to 10 MB.">
       <div className="space-y-3">
         <input type="file" accept="application/pdf,image/png,image/jpeg" aria-label="Upload bill" disabled={busy}
           onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} className="block w-full" />
-        {busy && <p className="text-sm text-muted">Reading…</p>}
+        {busy && <p className="text-sm text-muted" aria-live="polite">{progress ?? 'Reading…'}</p>}
+        <p className="text-xs text-muted">Photos are read on your device — the image itself never leaves your browser.</p>
         <ResultNote r={res} />
         {err && <Notice tone="error">{err}</Notice>}
       </div>

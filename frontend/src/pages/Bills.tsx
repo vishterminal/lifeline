@@ -2,8 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import { api, ApiError, day, money, pretty, type RankedBill, type WhatIf } from '../api'
-import { Badge, Button, EmptyState, Notice, OriginBadge, PageHeader, TrustBadge } from '../ui'
+import { api, ApiError, day, money, pretty, type RankedBill, type SplitState, type WhatIf } from '../api'
+import { Badge, Button, EmptyState, inputCls, Notice, OriginBadge, PageHeader, TrustBadge } from '../ui'
 
 const ICON: Record<string, string> = {
   ELECTRICITY: '⚡', WATER: '💧', GAS: '🔥', PHONE_INTERNET: '📶', INSURANCE_VEHICLE: '🏍️', INSURANCE_OTHER: '🛡️',
@@ -97,6 +97,68 @@ function PenaltyFighter({ bill }: { bill: RankedBill }) {
   )
 }
 
+function SplitPanel({ bill }: { bill: RankedBill }) {
+  const qc = useQueryClient()
+  const split = useQuery({ queryKey: ['split', bill.id], queryFn: () => api<SplitState>(`/obligations/${bill.id}/splits`) })
+  const [people, setPeople] = useState([{ name: '', phone_e164: '' }])
+  const [editing, setEditing] = useState(false)
+  const [msg, setMsg] = useState<string | null>(null)
+  const refresh = () => qc.invalidateQueries({ queryKey: ['split', bill.id] })
+  const save = useMutation({
+    mutationFn: () => api<SplitState>(`/obligations/${bill.id}/splits`, { method: 'POST', json: {
+      people: people.filter((p) => p.name.trim()).map((p) => ({ name: p.name.trim(), phone_e164: p.phone_e164.trim() || null })), include_me: true } }),
+    onSuccess: () => { setEditing(false); setMsg(null); refresh() },
+    onError: (e) => setMsg(e instanceof ApiError ? e.message : 'Failed'),
+  })
+  const paid = useMutation({ mutationFn: (id: string) => api(`/splits/${id}/paid`, { method: 'POST' }), onSuccess: refresh })
+  const remind = useMutation({
+    mutationFn: (id: string) => api<{ status: string; message: string }>(`/splits/${id}/remind`, { method: 'POST' }),
+    onSuccess: (r) => { setMsg(`${r.status === 'SENT' ? 'Sent' : 'Simulated (demo)'}: “${r.message}”`); refresh() },
+  })
+  const s = split.data
+  if (bill.amount == null) return null
+  return (
+    <div className="glass-inner rounded-2xl p-4 md:col-span-2">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex-1"><b className="text-gold">👥 Split this bill</b>
+          <div className="text-sm text-muted">{s && s.shares.length ? `Your share ${money(s.my_share)} · others owe ${money(s.others_owe)}` : 'Share it equally with flatmates or family and remind them.'}</div></div>
+        {!editing && <Button variant="secondary" onClick={() => setEditing(true)}>{s && s.shares.length ? 'Change split' : 'Split'}</Button>}
+      </div>
+      {editing && (
+        <form className="mt-3 space-y-2" onSubmit={(e) => { e.preventDefault(); save.mutate() }}>
+          {people.map((p, i) => (
+            <div key={i} className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <input className={inputCls} placeholder="Name" aria-label={`Person ${i + 1} name`} value={p.name}
+                onChange={(e) => setPeople(people.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} />
+              <input className={inputCls} placeholder="+91… (optional)" aria-label={`Person ${i + 1} phone`} value={p.phone_e164}
+                onChange={(e) => setPeople(people.map((x, j) => (j === i ? { ...x, phone_e164: e.target.value } : x)))} />
+            </div>
+          ))}
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="ghost" onClick={() => setPeople([...people, { name: '', phone_e164: '' }])}>+ Add person</Button>
+            <Button type="submit" disabled={save.isPending || !people.some((p) => p.name.trim())}>Split equally</Button>
+            <Button type="button" variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
+          </div>
+        </form>
+      )}
+      {s && s.shares.length > 0 && !editing && (
+        <ul className="mt-3 divide-y divide-white/[0.07]">
+          {s.shares.map((r) => (
+            <li key={r.id} className="flex flex-wrap items-center gap-2 py-2 text-sm">
+              <span className="flex-1">{r.name} <span className="num text-muted">owes {money(r.share_amount)}</span></span>
+              {r.paid ? <Badge tone="green">✓ Paid you</Badge> : <>
+                <Button variant="secondary" onClick={() => remind.mutate(r.id)} disabled={remind.isPending}>Remind</Button>
+                <Button variant="ghost" onClick={() => paid.mutate(r.id)} disabled={paid.isPending}>Mark paid</Button>
+              </>}
+            </li>
+          ))}
+        </ul>
+      )}
+      {msg && <div className="mt-2"><Notice tone="info">{msg}</Notice></div>}
+    </div>
+  )
+}
+
 function BillDetail({ bill }: { bill: RankedBill }) {
   const qc = useQueryClient()
   const c = bill.consequence
@@ -165,6 +227,7 @@ function BillDetail({ bill }: { bill: RankedBill }) {
           <Button variant="ghost" onClick={() => act.mutate('dismiss')} disabled={act.isPending}>Dismiss</Button>
         </div>
       )}
+      {open && <SplitPanel bill={bill} />}
       {(bill.status === 'OVERDUE' || (open && new Date(bill.due_date + 'T00:00:00') < new Date(new Date().toDateString()))) && <PenaltyFighter bill={bill} />}
       {err && <div className="md:col-span-2"><Notice tone="error">{err}</Notice></div>}
       {paying && <PayDialog bill={bill} onClose={() => setPaying(false)} />}

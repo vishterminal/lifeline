@@ -28,7 +28,9 @@ Lifeline turns scattered bills, renewals and dues into one connected system. It 
 7. **Reminders**: press **⏩ Simulate next 7 days**. Low-risk bills get a nudge, while high-risk ones escalate to WhatsApp and finally a family member. Snooze or mark paid right there; paying stops everything.
 8. **Cash flow** plans each payment around your salary day and balance. **Subscriptions** (from Bills) shows monthly and yearly cost and duplicate services.
 9. On an overdue bill, **✍️ Penalty Fighter** drafts a polite late-fee waiver request from facts only.
-10. **Overview** is your money dashboard, with a Life-load score. **Judge demo → Reset** replays everything.
+10. **💬 Ask Lifeline** (bottom-right): "What's most urgent?", "Can I afford my bills before salary?". It answers from your own data. It works on WhatsApp too: end the message with `?`.
+11. **More → Documents** (expiry dates become tracked renewals), **More → Monthly report** (penalties avoided), and **Split** on any bill.
+12. **Overview** is your money dashboard, with a Life-load score. **Judge demo → Reset** replays everything.
 
 | Connect: real-looking phones | Review: never guesses |
 |---|---|
@@ -57,6 +59,13 @@ Lifeline turns scattered bills, renewals and dues into one connected system. It 
 | ✍️ | **Penalty Fighter** | Drafts a late-fee waiver request from facts only (placeholders for anything unknown) and tracks whether it worked. |
 | 🔁 | **Subscriptions & savings** | Monthly and yearly cost, price changes, duplicate services; Cancel/Downgrade open the official account page. |
 | 🧮 | **Life-load score** | 0–100: how heavy your next 7 days are. |
+| 💬 | **Ask Lifeline** | Questions about your bills answered from your own data, with exact numbers, in the app and on WhatsApp. |
+| 📁 | **Documents vault** | PUC, insurance, licence, RC, passport expiry dates (only the last 4 characters of the number). Each becomes a tracked renewal, so the PUC → insurance chain works. |
+| 👥 | **Split bills** | Equal shares with flatmates or family, a WhatsApp reminder to each person, and mark paid. |
+| 📊 | **Monthly report** | Penalties avoided, bills paid on time, auto-detected payments, next month's load; print or save as PDF. |
+| 🗣️ | **Hindi & Tamil bills** | Regional-language bill SMS understood (amount, date, type); Hindi OTPs dropped. |
+| 📷 | **Photo bills, read on your device** | Bill photos are OCR'd in the browser; only the text is sent, then masked. |
+| 🔔 | **Real push notifications** | Installable web app (PWA) with web push for reminders; enable in Settings. |
 | 🔒 | **Privacy by design** | Messages are **never stored or logged**; only the extracted biller, amount and date are kept. Card, account, Aadhaar, PAN and phone numbers are masked **before** any AI call. A test scans the database file to prove it. **Delete all my data** wipes everything. |
 
 ## Demo workspace vs. live mode
@@ -105,7 +114,7 @@ Every input takes this one path: `backend/app/services/pipeline.py`.
 
 ## Quality
 
-- **97 backend tests** cover:
+- **106 backend tests** cover:
   - OTP filter and redaction
   - both readers and the disagreement check
   - fake-bill scoring, including "a friend sends a fake bill from Gmail"
@@ -113,10 +122,11 @@ Every input takes this one path: `backend/app/services/pipeline.py`.
   - ₹-risk ranking and the PUC → insurance chain
   - the reminder ladder, repeat cap, quiet hours, snooze, stop-on-paid and family alert
   - the cash-flow planner, Penalty Fighter and delete-all
+  - Ask Lifeline intents, documents, splits, the monthly report, Hindi/Tamil bills and push
   - webhook security (bad token, bad signature)
   - Gmail OAuth state and expiry
   - a database scan proving no message text is stored
-- **End-to-end browser test** (`e2e/click_through.py`) clicks every button, from sign-up through reminders, cash flow, subscriptions, Penalty Fighter and family contacts to delete-all. **26/26 steps pass.**
+- **End-to-end browser test** (`e2e/click_through.py`) clicks every button, from sign-up through reminders, cash flow, subscriptions, Penalty Fighter, bill splits, documents, the report, Ask Lifeline, photo OCR and notifications to delete-all. **33/33 steps pass.**
 
 ```bash
 cd backend && python -m pytest
@@ -131,7 +141,7 @@ Needs Python 3.10+. Run **`start.bat`** (Windows) or **`./start.sh`** (macOS/Lin
 ```
 api/index.py            Vercel entry point for the Python API
 backend/app/            FastAPI app: routers/, services/ (pipeline, trust, extraction, risk, gmail, whatsapp, sms), llm/, data/
-backend/tests/          97 tests
+backend/tests/          106 tests
 frontend/src/           React app: pages/, judge-mode simulators, design system
 frontend/dist/          built web app
 e2e/click_through.py    browser test of every button
@@ -142,4 +152,4 @@ start.bat / start.sh    one-command local launchers
 ## Roadmap
 
 - **Penalty figures:** seeded late fees and lapse costs are illustrative and always labelled **Estimated**. Sourced figures go in `backend/app/data/penalty_rules_seed.json`; the app refuses "Verified" without a real source.
-- **Next:** real browser push (PWA), live bank balances (Account Aggregator), and bill payment through a licensed partner.
+- **Next:** live bank balances (Account Aggregator), bill payment through a licensed partner (BBPS/UPI, the commission model), and a verified Google app so any Gmail user can connect.

@@ -138,6 +138,29 @@ export default function Overview() {
             )}
             {open.length > 5 && <Link to="/bills" className="mt-2 inline-block text-sm font-medium text-gold hover:underline">All bills →</Link>}
           </Card>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 [&>*]:min-w-0">
+            <Card title="Alerts">
+            <ul className="space-y-2.5 text-sm">
+              <AlertRow on={overdue.length > 0} tone="red" text={`${overdue.length} overdue bill${overdue.length === 1 ? '' : 's'}`} to="/bills" />
+              <AlertRow on={suspicious > 0} tone="red" text={`${suspicious} suspicious message${suspicious === 1 ? '' : 's'} blocked`} to="/inbox" />
+              <AlertRow on={needsReview > 0} tone="amber" text={`${needsReview} item${needsReview === 1 ? '' : 's'} waiting for your confirmation`} to="/inbox" />
+              <AlertRow on={subs.some((s) => s.price_changed)} tone="amber" text="A subscription price changed" to="/bills" />
+              {overdue.length + suspicious + needsReview === 0 && !subs.some((s) => s.price_changed) && <li className="text-muted">All clear — nothing needs you.</li>}
+            </ul>
+          </Card>
+            <Card title="Sources">
+            <div className="num text-3xl font-bold">{connected}<span className="text-lg text-muted">/3</span></div>
+            <p className="mb-3 text-sm text-muted">collecting automatically</p>
+            <ul className="space-y-2">
+              {(sources.data ?? []).map((s) => (
+                <li key={s.kind} className="flex items-center justify-between text-sm">
+                  <span className="text-ink-2">{s.kind === 'GMAIL' ? 'Gmail' : s.kind === 'SMS' ? 'SMS' : 'WhatsApp'}</span>
+                  <StatusBadge status={s.status} />
+                </li>
+              ))}
+            </ul>
+          </Card>
+          </div>
         </div>
 
         {/* RIGHT: stacked summaries */}
@@ -158,27 +181,6 @@ export default function Overview() {
           <Card title="This week">
             <div className="num text-3xl font-bold text-ink">{money(thisWeek.reduce((s, o) => s + num(o.amount), 0))}</div>
             <p className="text-sm text-muted">{thisWeek.length} bill{thisWeek.length === 1 ? '' : 's'} due in the next 7 days</p>
-          </Card>
-          <Card title="Alerts">
-            <ul className="space-y-2.5 text-sm">
-              <AlertRow on={overdue.length > 0} tone="red" text={`${overdue.length} overdue bill${overdue.length === 1 ? '' : 's'}`} to="/bills" />
-              <AlertRow on={suspicious > 0} tone="red" text={`${suspicious} suspicious message${suspicious === 1 ? '' : 's'} blocked`} to="/inbox" />
-              <AlertRow on={needsReview > 0} tone="amber" text={`${needsReview} item${needsReview === 1 ? '' : 's'} waiting for your confirmation`} to="/inbox" />
-              <AlertRow on={subs.some((s) => s.price_changed)} tone="amber" text="A subscription price changed" to="/bills" />
-              {overdue.length + suspicious + needsReview === 0 && !subs.some((s) => s.price_changed) && <li className="text-muted">All clear — nothing needs you.</li>}
-            </ul>
-          </Card>
-          <Card title="Sources">
-            <div className="num text-3xl font-bold">{connected}<span className="text-lg text-muted">/3</span></div>
-            <p className="mb-3 text-sm text-muted">collecting automatically</p>
-            <ul className="space-y-2">
-              {(sources.data ?? []).map((s) => (
-                <li key={s.kind} className="flex items-center justify-between text-sm">
-                  <span className="text-ink-2">{s.kind === 'GMAIL' ? 'Gmail' : s.kind === 'SMS' ? 'SMS' : 'WhatsApp'}</span>
-                  <StatusBadge status={s.status} />
-                </li>
-              ))}
-            </ul>
           </Card>
         </div>
 

@@ -204,7 +204,7 @@ export function SmsSimulator() {
     <Phone notice={flash && <PushNotice title={flash.title} text={flash.text} />}>
       <div className="bg-[#121212]"><StatusBar /></div>
       <div className="bg-[#121212] px-4 pb-3 text-white">
-        <div className="text-[22px] font-semibold tracking-tight">Messages</div>
+        <div className="flex items-baseline justify-between"><div className="text-[22px] font-semibold tracking-tight">Messages</div>{handled > 0 && <div className="text-[11px] text-white/45">{handled} handled by Lifeline</div>}</div>
         <div className="mt-2 flex items-center gap-2 rounded-full bg-[#2a2a2a] px-3 py-2 text-sm text-white/50">
           <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
           Search conversations
@@ -251,7 +251,6 @@ export function SmsSimulator() {
           </li>
         )}
       </ul>
-      {handled > 0 && <div className="absolute inset-x-0 bottom-5 text-center text-[11px] text-white/40">{handled} handled by Lifeline</div>}
     </Phone>
   )
 }

@@ -128,3 +128,14 @@ def test_whatsapp_question_gets_an_answer(client, user):
         reply = whatsapp_inbound.handle_inbound(db, {"From": "whatsapp:+919800000888", "Body": "What do I owe this week?"})
         db.commit()
     assert "TNEB" in reply and "₹1,840" in reply
+
+
+def test_whatsapp_personal_question_is_not_treated_as_bill_question(client, user):
+    from app.services import whatsapp_inbound
+
+    h, _ = user
+    client.put("/api/sources/whatsapp", json={"phone_e164": "+919800000889"}, headers=h)
+    with SessionLocal() as db:
+        reply = whatsapp_inbound.handle_inbound(db, {"From": "whatsapp:+919800000889", "Body": "Hey, dinner tonight?"})
+        db.commit()
+    assert "doesn't look like a bill" in reply

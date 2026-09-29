@@ -22,6 +22,8 @@ os.environ.update({
     "TWILIO_ACCOUNT_SID": "",
     "GOOGLE_CLIENT_ID": "",
     "GOOGLE_CLIENT_SECRET": "",
+    "VAPID_PUBLIC_KEY": "",
+    "VAPID_PRIVATE_KEY": "",
     "ANTHROPIC_API_KEY": "",
 })
 from cryptography.fernet import Fernet  # noqa: E402

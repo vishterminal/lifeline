@@ -2,16 +2,19 @@ import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, NavLink, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { api, auth, type Confirmation, type Flagged, type User } from './api'
+import AskLifeline from './AskLifeline'
 import { DemoPill } from './judge'
 import { Logo } from './ui'
 import AuthCallback from './pages/AuthCallback'
 import Bills from './pages/Bills'
 import CalendarPage from './pages/Calendar'
 import CashFlow from './pages/CashFlow'
+import Documents from './pages/Documents'
 import Connect from './pages/Connect'
 import Login from './pages/Login'
 import Overview from './pages/Overview'
 import Proof from './pages/Proof'
+import Report from './pages/Report'
 import Reminders from './pages/Reminders'
 import Review from './pages/Review'
 import Settings from './pages/Settings'
@@ -32,6 +35,39 @@ const NAV = [
   { to: '/calendar', label: 'Calendar' },
   { to: '/settings', label: 'Settings' },
 ]
+
+const MORE = [
+  { to: '/subscriptions', label: '🔁 Subscriptions' },
+  { to: '/documents', label: '📁 Documents' },
+  { to: '/report', label: '📊 Monthly report' },
+]
+
+function MoreMenu({ pill }: { pill: (a: { isActive: boolean }) => string }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const loc = useLocation()
+  useEffect(() => setOpen(false), [loc.pathname])
+  useEffect(() => {
+    const close = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [])
+  const active = MORE.some((m) => loc.pathname.startsWith(m.to))
+  return (
+    <div className="relative" ref={ref}>
+      <button onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-haspopup="menu" className={pill({ isActive: active })}>
+        More <span aria-hidden="true" className="text-xs">▾</span>
+      </button>
+      {open && (
+        <div role="menu" className="glass absolute right-0 z-30 mt-2 w-56 overflow-hidden rounded-2xl p-1">
+          {MORE.map((m) => (
+            <Link key={m.to} to={m.to} role="menuitem" className="block rounded-xl px-3 py-2.5 text-sm text-ink-2 hover:bg-raised hover:text-ink">{m.label}</Link>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function UserMenu({ user }: { user?: User }) {
   const [open, setOpen] = useState(false)
@@ -82,7 +118,7 @@ function Shell() {
 
   return (
     <div className="min-h-screen overflow-x-clip bg-bg">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-bg/70 backdrop-blur-xl">
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-bg/70 backdrop-blur-xl print:hidden">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6">
           <Logo />
           <nav aria-label="Main" className="mx-auto hidden items-center gap-0.5 rounded-full border border-line bg-surface/70 p-1 xl:flex">
@@ -92,6 +128,7 @@ function Shell() {
                 {n.to === '/inbox' && pending > 0 && <span className="rounded-full bg-bg/80 px-1.5 text-xs font-bold text-gold">{pending}</span>}
               </NavLink>
             ))}
+            <MoreMenu pill={link} />
           </nav>
           <div className="ml-auto flex items-center gap-2 xl:ml-0">
             {loc.pathname === '/connect' && <DemoPill />}
@@ -114,13 +151,15 @@ function Shell() {
                 {n.to === '/inbox' && pending > 0 && <span className="rounded-full bg-bg/80 px-1.5 text-xs font-bold text-gold">{pending}</span>}
               </NavLink>
             ))}
+            {MORE.map((m) => <NavLink key={m.to} to={m.to} className={link}>{m.label.split(' ').slice(1).join(' ')}</NavLink>)}
           </div>
         </nav>
       </header>
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <Outlet />
       </main>
-      <footer className="mx-auto max-w-7xl px-4 pb-10 text-xs text-muted sm:px-6">
+      <AskLifeline />
+      <footer className="mx-auto max-w-7xl px-4 pb-24 text-xs text-muted sm:px-6 print:hidden">
         Lifeline stores only extracted bill details — never your emails or messages. · <Link to="/proof" className="hover:text-gold">Proven live</Link>
       </footer>
     </div>
@@ -142,6 +181,8 @@ export default function App() {
         <Route path="/reminders" element={<Reminders />} />
         <Route path="/cashflow" element={<CashFlow />} />
         <Route path="/subscriptions" element={<Subscriptions />} />
+        <Route path="/documents" element={<Documents />} />
+        <Route path="/report" element={<Report />} />
         <Route path="/settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<Navigate to={auth.get() ? '/overview' : '/login'} replace />} />

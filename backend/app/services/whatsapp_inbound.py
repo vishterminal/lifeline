@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import re
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -74,7 +75,10 @@ def handle_inbound(db: Session, params: dict, media_fetcher=None, origin: str = 
         reminder_service.acknowledge(db, o, f"SNOOZE_{minutes}")
         return f"OK - I'll remind you about {name} again in {minutes} minutes."
 
-    if body.endswith("?") and (params.get("NumMedia") or "0") == "0":  # a question, not a forwarded bill
+    # A question about bills/money (not a forwarded bill, not a chat like "dinner tonight?")
+    if body.endswith("?") and (params.get("NumMedia") or "0") == "0" and re.search(
+            r"\b(owe|due|pay|paid|bill|bills|urgent|overdue|late|subscription|subscriptions|afford|salary|balance|renew|"
+            r"when is|how much|what's|whats)\b", body, re.I):
         from app.services import ask_service
 
         return ask_service.answer(db, user, body)["answer"]

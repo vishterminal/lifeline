@@ -209,3 +209,17 @@ export interface SubscriptionRow {
 }
 export interface Subscriptions { subscriptions: SubscriptionRow[]; duplicates: { category: string; services: string[] }[]; monthly_total: string; yearly_total: string; note: string }
 export interface Lifeload { score: number; label: string; items_next_7_days: number }
+
+export interface MonthlyReport {
+  month: string; label: string; paid_count: number; paid_total: string; paid_on_time: number; penalties_avoided: string
+  auto_detected: number; reminders_sent: number; overdue_now: { biller: string; amount: string | null; due_date: string }[]
+  next_month: { label: string; count: number; total: string }; subscriptions: { count: number; monthly: string }; note: string
+}
+export interface DocumentRow {
+  id: string; kind: string; label: string; number_last4: string | null; vehicle_ref: string | null
+  expiry_date: string; obligation_id: string | null; days_left: number; status: string | null
+}
+export interface SplitState {
+  obligation_id: string; amount: string | null; others_owe: string; my_share: string | null
+  shares: { id: string; name: string; phone_e164: string | null; share_amount: string; paid: boolean; reminded_at: string | null }[]
+}

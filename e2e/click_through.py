@@ -93,7 +93,7 @@ with sync_playwright() as p:
     @step("WhatsApp: HELP and typed message get replies")
     def _():
         page.get_by_role("button", name="HELP", exact=True).click()
-        expect(page.get_by_text(re.compile("Commands: WHAT'S DUE, HELP")).last).to_be_visible()
+        expect(page.get_by_text(re.compile("Commands: WHAT'S DUE")).last).to_be_visible()
         page.get_by_label("Message", exact=True).fill("Hey, dinner tonight?")
         page.get_by_role("button", name="Send", exact=True).click()
         expect(page.get_by_text(re.compile("doesn't look like a bill")).last).to_be_visible()
@@ -299,6 +299,94 @@ with sync_playwright() as p:
         expect(page.get_by_text("+919811100099")).to_be_visible()
         page.get_by_role("button", name="Remove Amma").click()
         expect(page.get_by_text("+919811100099")).to_have_count(0)
+
+    @step("Split a bill: equal shares, remind, mark paid")
+    def _():
+        page.get_by_role("link", name="Bills").first.click()
+        page.wait_for_url("**/bills")
+        bill = page.locator("main li").filter(has=page.get_by_text("at risk")).filter(has=page.get_by_text("₹")).first
+        bill.locator("button").first.click()
+        panel = bill.locator("div", has=page.get_by_text("👥 Split this bill")).last
+        bill.get_by_role("button", name="Split", exact=True).click()
+        bill.get_by_label("Person 1 name").fill("Arun")
+        bill.get_by_label("Person 1 phone").fill("+919811100011")
+        bill.get_by_role("button", name="Split equally").click()
+        expect(bill.get_by_text(re.compile("Arun owes"))).to_be_visible()
+        bill.get_by_role("button", name="Remind", exact=True).click()
+        expect(bill.get_by_text(re.compile("Simulated \\(demo\\)|Sent:"))).to_be_visible()
+        bill.get_by_role("button", name="Mark paid").click()
+        expect(bill.get_by_text("✓ Paid you")).to_be_visible()
+
+    @step("Documents vault: add PUC, it becomes a tracked renewal, remove")
+    def _():
+        page.get_by_role("button", name=re.compile("^More")).first.click()
+        page.get_by_role("menuitem", name=re.compile("Documents")).click()
+        page.wait_for_url("**/documents")
+        page.get_by_label("Number (optional — only the last 4 are kept)").fill("PUC/TN/88231")
+        page.get_by_label("Vehicle number").fill("TN 09 AB 1234")
+        page.get_by_label("Expiry date").fill("2026-12-15")
+        page.get_by_role("button", name="Save document").click()
+        expect(page.get_by_text("Saved — Lifeline will remind you")).to_be_visible()
+        expect(page.get_by_text("••••8231", exact=False)).to_be_visible()
+        page.get_by_role("button", name="Remove PUC certificate").click()
+        expect(page.get_by_text("••••8231", exact=False)).to_have_count(0)
+
+    @step("Monthly report: penalties avoided, month navigation")
+    def _():
+        page.get_by_role("button", name=re.compile("^More")).first.click()
+        page.get_by_role("menuitem", name=re.compile("Monthly report")).click()
+        page.wait_for_url("**/report")
+        expect(page.get_by_text(re.compile("penalties avoided", re.I)).first).to_be_visible()
+        page.get_by_role("button", name="Previous month").click()
+        page.get_by_role("button", name="Next month").click()
+
+    @step("Ask Lifeline: suggestion and typed question")
+    def _():
+        page.get_by_role("button", name="Ask Lifeline").click()
+        chat = page.get_by_role("dialog", name="Ask Lifeline")
+        chat.get_by_role("button", name="What's most urgent?").click()
+        expect(chat.get_by_text(re.compile("Most urgent by what missing it would cost|no open bills"))).to_be_visible()
+        chat.get_by_label("Your question").fill("Anything overdue?")
+        chat.get_by_role("button", name="Ask", exact=True).click()
+        expect(chat.get_by_text(re.compile("Nothing is overdue|Overdue:"))).to_be_visible()
+        page.get_by_role("button", name="Ask Lifeline").click()
+
+    @step("WhatsApp: a question gets an answer; Hindi bill SMS understood")
+    def _():
+        page.get_by_role("link", name="Connect").first.click()
+        page.wait_for_url("**/connect")
+        page.get_by_label("Message", exact=True).fill("What do I owe this week?")
+        page.get_by_role("button", name="Send", exact=True).click()
+        expect(page.get_by_text(re.compile("due this week|Nothing due this week|no open bills")).last).to_be_visible()
+        hindi = page.locator("li", has=page.get_by_text("Jio पोस्टपेड"))
+        hindi.get_by_role("button", name=re.compile("Forward to Lifeline")).click()
+        expect(page.get_by_text(re.compile("Waiting for your confirmation|Added to your bills")).first).to_be_visible()
+
+    @step("Photo of a bill is read on the device (OCR)")
+    def _():
+        import os, tempfile
+        from PIL import Image, ImageDraw, ImageFont
+        img = Image.new("RGB", (1400, 320), "white")
+        d = ImageDraw.Draw(img)
+        try:
+            font = ImageFont.truetype("arial.ttf", 44)
+        except OSError:
+            font = ImageFont.load_default()
+        d.text((40, 60), "BESCOM Electricity Bill", fill="black", font=font)
+        d.text((40, 150), "Amount payable Rs. 1,475.00 due on 25 Oct 2026", fill="black", font=font)
+        path = os.path.join(tempfile.gettempdir(), "lifeline-bill.png")
+        img.save(path)
+        page.locator("input[aria-label='Upload bill']").set_input_files(path)
+        expect(page.get_by_text(re.compile("Added to your bills|Waiting for your confirmation|Already received")).first).to_be_visible(timeout=90000)
+
+    @step("Notifications: enable (permission handled) and send test")
+    def _():
+        page.get_by_role("link", name="Settings").first.click()
+        page.wait_for_url("**/settings")
+        page.get_by_role("button", name="Enable notifications").click()
+        expect(page.get_by_text(re.compile("Notifications are on|blocked|not configured|does not support|Push isn't"))).to_be_visible()
+        page.get_by_role("button", name="Send test").click()
+        expect(page.get_by_text(re.compile("Test notification sent|No browser is subscribed|isn't configured"))).to_be_visible()
 
     @step("Reset demo clears everything and the phone refills")
     def _():
