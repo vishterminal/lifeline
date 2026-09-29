@@ -1,55 +1,79 @@
 import type { ReactNode } from 'react'
 import { pretty } from './api'
 
-export function Card({ title, subtitle, icon, status, children }: {
-  title: string; subtitle?: string; icon?: ReactNode; status?: ReactNode; children: ReactNode
+// ---- Lifeline design system primitives (dark olive + gold) -------------------------------
+
+export function Card({ title, subtitle, icon, status, children, className = '' }: {
+  title?: string; subtitle?: string; icon?: ReactNode; status?: ReactNode; children: ReactNode; className?: string
 }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="mb-4 flex items-start gap-3">
-        {icon && <div className="mt-0.5 text-2xl" aria-hidden="true">{icon}</div>}
-        <div className="flex-1">
-          <h2 className="text-lg font-semibold">{title}</h2>
-          {subtitle && <p className="text-sm text-slate-600">{subtitle}</p>}
+    <section className={`rounded-[var(--radius-card)] border border-line bg-card p-5 shadow-[var(--shadow-card)] sm:p-6 ${className}`}>
+      {(title || icon || status) && (
+        <div className="mb-5 flex items-start gap-3">
+          {icon && (
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-line bg-surface text-xl" aria-hidden="true">{icon}</div>
+          )}
+          <div className="min-w-0 flex-1">
+            {title && <h2 className="text-lg font-semibold tracking-tight text-ink">{title}</h2>}
+            {subtitle && <p className="mt-0.5 text-sm text-muted">{subtitle}</p>}
+          </div>
+          {status}
         </div>
-        {status}
-      </div>
+      )}
       {children}
     </section>
   )
 }
 
-const STATUS_STYLE: Record<string, string> = {
-  CONNECTED: 'bg-emerald-100 text-emerald-800',
-  LINKED: 'bg-sky-100 text-sky-800',
-  NEEDS_RECONNECT: 'bg-amber-100 text-amber-800',
-  ERROR: 'bg-red-100 text-red-800',
-  DISCONNECTED: 'bg-slate-100 text-slate-600',
+export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: ReactNode; actions?: ReactNode }) {
+  return (
+    <div className="mb-6 flex flex-wrap items-end gap-4">
+      <div className="min-w-0 flex-1">
+        <h1 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">{title}</h1>
+        {subtitle && <p className="mt-1.5 max-w-3xl text-ink-2">{subtitle}</p>}
+      </div>
+      {actions}
+    </div>
+  )
 }
-const STATUS_ICON: Record<string, string> = { CONNECTED: '✓', LINKED: '•', NEEDS_RECONNECT: '!', ERROR: '✕', DISCONNECTED: '○' }
+
+const STATUS_STYLE: Record<string, string> = {
+  CONNECTED: 'border-emerald-400/30 bg-emerald-500/12 text-emerald-300',
+  LINKED: 'border-gold/30 bg-gold/10 text-gold',
+  NEEDS_RECONNECT: 'border-amber-400/30 bg-amber-500/12 text-amber-300',
+  ERROR: 'border-red-400/30 bg-red-500/12 text-red-300',
+  DISCONNECTED: 'border-line bg-surface text-muted',
+}
+const STATUS_ICON: Record<string, string> = { CONNECTED: '●', LINKED: '●', NEEDS_RECONNECT: '!', ERROR: '✕', DISCONNECTED: '○' }
 
 export function StatusBadge({ status }: { status: string }) {
   const label = status === 'DISCONNECTED' ? 'Not connected' : pretty(status)
   return (
-    <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[status] ?? STATUS_STYLE.DISCONNECTED}`}>
-      <span aria-hidden="true">{STATUS_ICON[status] ?? '○'}</span>{label}
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[status] ?? STATUS_STYLE.DISCONNECTED}`}>
+      <span aria-hidden="true" className="text-[10px]">{STATUS_ICON[status] ?? '○'}</span>{label}
     </span>
   )
 }
 
-export function Badge({ children, tone = 'slate' }: { children: ReactNode; tone?: 'slate' | 'amber' | 'red' | 'green' | 'violet' | 'sky' }) {
-  const tones = {
-    slate: 'bg-slate-100 text-slate-700', amber: 'bg-amber-100 text-amber-800', red: 'bg-red-100 text-red-800',
-    green: 'bg-emerald-100 text-emerald-800', violet: 'bg-violet-100 text-violet-800', sky: 'bg-sky-100 text-sky-800',
-  }
-  return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${tones[tone]}`}>{children}</span>
+type Tone = 'slate' | 'amber' | 'red' | 'green' | 'violet' | 'sky' | 'gold'
+const TONES: Record<Tone, string> = {
+  slate: 'border-line bg-surface text-ink-2',
+  amber: 'border-amber-400/25 bg-amber-500/12 text-amber-300',
+  red: 'border-red-400/25 bg-red-500/12 text-red-300',
+  green: 'border-emerald-400/25 bg-emerald-500/12 text-emerald-300',
+  violet: 'border-violet-400/25 bg-violet-500/12 text-violet-300',
+  sky: 'border-sky-400/25 bg-sky-500/12 text-sky-300',
+  gold: 'border-gold/30 bg-gold/10 text-gold',
+}
+export function Badge({ children, tone = 'slate' }: { children: ReactNode; tone?: Tone }) {
+  return <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${TONES[tone]}`}>{children}</span>
 }
 
 export function OriginBadge({ origin }: { origin: 'REAL' | 'DEMO' }) {
   return origin === 'DEMO' ? <Badge tone="violet">◆ DEMO</Badge> : <Badge tone="slate">● REAL</Badge>
 }
 
-const TRUST: Record<string, [string, 'green' | 'amber' | 'red' | 'slate' | 'sky']> = {
+const TRUST: Record<string, [string, Tone]> = {
   VERIFIED_SENDER: ['✓ Verified sender', 'green'],
   NEW_BILLER_CONFIRM: ['? New biller — confirm', 'amber'],
   UNVERIFIED: ['• Unverified sender', 'slate'],
@@ -64,33 +88,54 @@ export function TrustBadge({ label }: { label: string }) {
 
 export function Button({ children, variant = 'primary', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'danger' | 'ghost' }) {
   const styles = {
-    primary: 'bg-slate-900 text-white hover:bg-slate-800',
-    secondary: 'border border-slate-300 bg-white hover:bg-slate-50',
-    danger: 'border border-red-200 bg-white text-red-700 hover:bg-red-50',
-    ghost: 'text-slate-600 hover:bg-slate-100',
+    primary: 'bg-gold text-bg font-semibold hover:bg-gold-2 active:translate-y-px shadow-[0_6px_20px_-8px_rgb(255_209_0/0.6)]',
+    secondary: 'border border-line-strong bg-surface/60 text-ink hover:border-gold/50 hover:bg-raised active:translate-y-px',
+    danger: 'border border-red-400/30 bg-red-500/10 text-red-300 hover:bg-red-500/20 active:translate-y-px',
+    ghost: 'text-ink-2 hover:bg-raised hover:text-ink',
   }
   return (
-    <button {...props} className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50 ${styles[variant]} ${props.className ?? ''}`}>
+    <button {...props} className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-45 ${styles[variant]} ${props.className ?? ''}`}>
       {children}
     </button>
   )
 }
 
+export const inputCls = 'min-h-11 rounded-xl border border-line-strong bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-gold/60 focus:outline-none focus:ring-2 focus:ring-gold/30'
+
 export function Notice({ tone = 'info', children }: { tone?: 'info' | 'ok' | 'warn' | 'error'; children: ReactNode }) {
-  const t = { info: 'bg-sky-50 text-sky-900', ok: 'bg-emerald-50 text-emerald-900', warn: 'bg-amber-50 text-amber-900', error: 'bg-red-50 text-red-800' }
-  return <div role={tone === 'error' ? 'alert' : 'status'} aria-live="polite" className={`rounded-lg px-3 py-2 text-sm ${t[tone]}`}>{children}</div>
+  const t = {
+    info: 'border-sky-400/25 bg-sky-500/10 text-sky-200',
+    ok: 'border-emerald-400/25 bg-emerald-500/10 text-emerald-200',
+    warn: 'border-amber-400/25 bg-amber-500/10 text-amber-200',
+    error: 'border-red-400/25 bg-red-500/10 text-red-200',
+  }
+  return <div role={tone === 'error' ? 'alert' : 'status'} aria-live="polite" className={`rounded-xl border px-3.5 py-2.5 text-sm ${t[tone]}`}>{children}</div>
 }
 
 export function CopyField({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-xs font-medium text-slate-500">{label}</div>
+      <div className="text-xs font-medium text-muted">{label}</div>
       <div className="mt-1 flex gap-2">
-        <code className="flex-1 overflow-x-auto whitespace-nowrap rounded-lg bg-slate-100 px-3 py-2 text-sm">{value}</code>
+        <code className="flex-1 overflow-x-auto whitespace-nowrap rounded-xl border border-line bg-bg px-3 py-2.5 text-sm text-gold">{value}</code>
         <Button variant="secondary" onClick={() => navigator.clipboard?.writeText(value)} aria-label={`Copy ${label}`}>Copy</Button>
       </div>
     </div>
   )
+}
+
+export function Stat({ label, value, hint, accent = false }: { label: string; value: ReactNode; hint?: ReactNode; accent?: boolean }) {
+  return (
+    <div className={`rounded-2xl border p-4 ${accent ? 'border-gold/40 bg-gold/10' : 'border-line bg-surface/70'}`}>
+      <div className="text-xs font-medium uppercase tracking-wider text-muted">{label}</div>
+      <div className={`num mt-1 text-2xl font-bold tracking-tight ${accent ? 'text-gold' : 'text-ink'}`}>{value}</div>
+      {hint && <div className="mt-0.5 text-xs text-muted">{hint}</div>}
+    </div>
+  )
+}
+
+export function EmptyState({ children }: { children: ReactNode }) {
+  return <div className="rounded-[var(--radius-card)] border border-dashed border-line-strong bg-surface/40 p-8 text-center text-ink-2">{children}</div>
 }
 
 export const OUTCOME_TEXT: Record<string, string> = {
@@ -98,7 +143,7 @@ export const OUTCOME_TEXT: Record<string, string> = {
   NEEDS_CONFIRMATION: 'Waiting for your confirmation in Review',
   SUSPICIOUS: 'Flagged as suspicious — not added',
   DROPPED_OTP: 'OTP detected — dropped, nothing stored',
-  DROPPED_NOT_BILL: "Not a bill — ignored",
+  DROPPED_NOT_BILL: 'Not a bill — ignored',
   DUPLICATE: 'Already received — skipped',
   PAID_DETECTED: 'Matched a bill and marked it paid',
   CHARGE_RECORDED: 'Payment noted',

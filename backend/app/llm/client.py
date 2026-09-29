@@ -73,5 +73,9 @@ def get_llm() -> LLMClient | None:
     if not get_settings().llm_live:
         return None
     if _client is None:
-        _client = LLMClient()
+        try:
+            _client = LLMClient()
+        except ImportError:  # anthropic is optional (requirements-live.txt)
+            log.warning("LLM_MODE=live but the 'anthropic' package is not installed; using the mock extractor")
+            return None
     return _client

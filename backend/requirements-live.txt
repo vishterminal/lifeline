@@ -1,0 +1,4 @@
+# Optional: only needed for LLM_MODE=live (real LLM extraction).
+# Judge / demo mode does not need it.
+-r requirements.txt
+anthropic>=0.40
