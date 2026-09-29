@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import {
-  api, day, money, pretty, when, type Confirmation, type Flagged, type IngestEvent, type Obligation, type RankedBill, type Source, type User,
+  api, day, money, pretty, when, type Confirmation, type Flagged, type IngestEvent, type Obligation, type Lifeload, type RankedBill, type Source, type User,
 } from '../api'
 import { BarChart, type BarDatum } from '../charts'
 import { Badge, Card, EmptyState, OUTCOME_TEXT, OriginBadge, PageHeader, StatusBadge } from '../ui'
@@ -27,6 +27,7 @@ export default function Overview() {
   const flagged = useQuery({ queryKey: ['flagged'], queryFn: () => api<Flagged[]>('/flagged') })
   const events = useQuery({ queryKey: ['events'], queryFn: () => api<IngestEvent[]>('/ingest-events?limit=6') })
   const sources = useQuery({ queryKey: ['sources'], queryFn: () => api<Source[]>('/sources') })
+  const load = useQuery({ queryKey: ['lifeload'], queryFn: () => api<Lifeload>('/lifeload'), refetchInterval: 30_000 })
   const ranked = useQuery({ queryKey: ['bills', 'risk'], queryFn: () => api<RankedBill[]>('/bills?sort=risk'), refetchInterval: 30_000 })
 
   const user = me.data?.user
@@ -150,6 +151,10 @@ export default function Overview() {
               <Link to="/bills" className="mt-3 inline-block text-sm font-medium text-gold hover:underline">See ranking →</Link>
             </Card>
           )}
+          <Card title="Life-load">
+            <Gauge score={load.data?.score ?? 0} />
+            <p className="-mt-2 text-center text-sm text-muted">{load.data ? `${load.data.label} week · ${load.data.items_next_7_days} due in 7 days` : ' '}</p>
+          </Card>
           <Card title="This week">
             <div className="num text-3xl font-bold text-ink">{money(thisWeek.reduce((s, o) => s + num(o.amount), 0))}</div>
             <p className="text-sm text-muted">{thisWeek.length} bill{thisWeek.length === 1 ? '' : 's'} due in the next 7 days</p>
@@ -206,7 +211,7 @@ export default function Overview() {
           </Card>
         </div>
         <div className="lg:col-span-4">
-          <Card title="Subscriptions" className="h-full">
+          <Card title="Subscriptions" className="h-full" status={<Link to="/subscriptions" className="text-sm font-medium text-gold hover:underline">Manage →</Link>}>
             {subs.length === 0 ? <p className="text-sm text-muted">No recurring charges detected yet. Upload a bank statement on Connect to find them.</p> : (
               <ul className="space-y-3">
                 {subs.map((s) => (
@@ -224,6 +229,19 @@ export default function Overview() {
         </div>
       </div>
     </div>
+  )
+}
+
+function Gauge({ score }: { score: number }) {
+  const r = 70, c = Math.PI * r, pct = Math.max(0, Math.min(100, score)) / 100
+  const color = score >= 60 ? '#f87171' : score >= 30 ? '#FFD100' : '#34d399'
+  return (
+    <svg viewBox="0 0 180 110" className="mx-auto h-auto w-full max-w-[220px]" role="img" aria-label={`Life-load score ${score} out of 100`}>
+      <path d="M20 95 A70 70 0 0 1 160 95" fill="none" stroke="rgb(247 244 232 / 0.1)" strokeWidth="14" strokeLinecap="round" />
+      <path d="M20 95 A70 70 0 0 1 160 95" fill="none" stroke={color} strokeWidth="14" strokeLinecap="round" strokeDasharray={`${c * pct} ${c}`} />
+      <text x="90" y="88" textAnchor="middle" fontSize="30" fontWeight="800" fill="#F7F4E8">{score}</text>
+      <text x="90" y="104" textAnchor="middle" fontSize="10" fill="#96927D">out of 100</text>
+    </svg>
   )
 }
 

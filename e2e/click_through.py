@@ -20,6 +20,12 @@ def step(name):
             results.append(("PASS", name, ""))
         except Exception as e:  # keep going, report everything
             results.append(("FAIL", name, f"{type(e).__name__}: {str(e).splitlines()[0][:220]}"))
+            try:
+                shot = f"e2e-fail-{len(results)}.png"
+                page.screenshot(path=shot)
+                results[-1] = (results[-1][0], results[-1][1], results[-1][2] + f" [{page.url}] screenshot: {shot}")
+            except Exception:
+                pass
         return fn
     return deco
 
@@ -54,11 +60,11 @@ with sync_playwright() as p:
         page.wait_for_url("**/connect")
         expect(page.get_by_role("button", name=re.compile("Judge demo"))).to_be_visible()
 
-    @step("Nav order: Connect, Review, Bills, Overview, Calendar, Settings")
+    @step("Nav order: Connect, Review, Bills, Reminders, Overview, Cash flow, Calendar, Settings")
     def _():
         names = [t.strip() for t in page.locator("header nav").first.locator("a").all_inner_texts()]
         names = [re.sub(r"\s*\d+$", "", n) for n in names]
-        assert names == ["Connect", "Review", "Bills", "Overview", "Calendar", "Settings"], names
+        assert names == ["Connect", "Review", "Bills", "Reminders", "Overview", "Cash flow", "Calendar", "Settings"], names
 
     @step("Run full demo from the Connect header control")
     def _():
@@ -120,10 +126,18 @@ with sync_playwright() as p:
         card.get_by_role("button", name="Confirm").click()
         expect(page.get_by_text("Our two readers disagreed")).to_have_count(0)
 
-    @step("Review: reject one, dismiss suspicious")
+    @step("Review: reject one, confirm the rest, dismiss suspicious")
     def _():
-        first = page.locator("article").first
-        first.get_by_role("button", name=re.compile("reject")).click()
+        for _ in range(8):
+            arts = page.locator("article")
+            if arts.count() == 0:
+                break
+            a = arts.first
+            if a.get_by_text("Airtel").count() and a.get_by_role("button", name=re.compile("reject")).count():
+                a.get_by_role("button", name=re.compile("reject")).click()
+            else:
+                a.get_by_role("button", name="Confirm").click()
+            page.wait_for_timeout(700)
         page.get_by_role("tab", name=re.compile("Suspicious")).click()
         s = page.locator("article").first
         expect(s.get_by_text(re.compile("Suspicious"))).to_be_visible()
@@ -153,6 +167,60 @@ with sync_playwright() as p:
         expect(card.get_by_label("Amount ₹ ", exact=False)).to_have_value(re.compile(r"^1250(.00)?$"))
         card.get_by_role("button", name="Confirm").click()
         expect(page.get_by_text("You typed this in")).to_have_count(0)
+
+    @step("Settings: save profile")
+    def _():
+        page.get_by_role("link", name="Settings").first.click()
+        page.wait_for_url("**/settings")
+        page.get_by_label("Current balance (₹)").fill("42500")
+        page.get_by_label("Salary day").fill("1")
+        page.get_by_role("button", name="Save changes").click()
+        expect(page.get_by_text("Saved.")).to_be_visible()
+
+    @step("Reminders: run check, simulate 7 days, snooze, paid, clear simulated")
+    def _():
+        page.get_by_role("link", name="Reminders").first.click()
+        page.wait_for_url("**/reminders")
+        page.get_by_role("button", name="Run reminder check now").click()
+        expect(page.get_by_text(re.compile(r"Sent \d+ reminder|Nothing due for a reminder"))).to_be_visible()
+        page.get_by_role("button", name=re.compile("Simulate next 7 days")).click()
+        expect(page.get_by_text(re.compile("Next 7 days simulated"))).to_be_visible(timeout=30000)
+        expect(page.get_by_text("⏩ simulated").first).to_be_visible()
+        page.get_by_role("button", name="Snooze 15 min").first.click()
+        expect(page.get_by_text("Snoozed 15 minutes.")).to_be_visible()
+        page.get_by_role("button", name=re.compile("I've paid")).first.click()
+        expect(page.get_by_text("Marked paid — reminders stopped.")).to_be_visible()
+        page.get_by_role("button", name="Clear simulated").click()
+        expect(page.get_by_text("⏩ simulated")).to_have_count(0)
+
+    @step("Overview: life-load gauge")
+    def _():
+        page.get_by_role("link", name="Overview").first.click()
+        page.wait_for_url("**/overview")
+        expect(page.get_by_role("img", name=re.compile("Life-load score"))).to_be_visible()
+
+    @step("Cash flow: balance line, schedule, assumptions")
+    def _():
+        page.get_by_role("link", name="Cash flow").first.click()
+        page.wait_for_url("**/cashflow")
+        expect(page.get_by_role("heading", name="Projected balance")).to_be_visible()
+        expect(page.get_by_text("snapshot you entered", exact=True)).to_be_visible()
+        expect(page.get_by_role("heading", name="Payment schedule")).to_be_visible()
+        expect(page.get_by_text(re.compile("Balance is a snapshot"))).to_be_visible()
+
+    @step("Subscriptions: keep and cancel")
+    def _():
+        page.get_by_role("link", name="Bills").first.click()
+        page.wait_for_url("**/bills")
+        page.get_by_role("link", name=re.compile("Subscriptions")).click()
+        page.wait_for_url("**/subscriptions")
+        expect(page.get_by_text("Per year")).to_be_visible()
+        page.get_by_role("button", name="Keep").first.click()
+        expect(page.get_by_text(re.compile("Kept"))).to_be_visible()
+        with page.context.expect_page() as pop:
+            page.get_by_role("button", name="Cancel").first.click()
+        pop.value.close()
+        expect(page.get_by_text(re.compile("Lifeline never cancels on your behalf"))).to_be_visible()
 
     @step("Bills: sort toggle, expand, what-if, simulated pay, mark paid, dismiss")
     def _():
@@ -184,20 +252,53 @@ with sync_playwright() as p:
         page.get_by_role("button", name="Previous month").click()
         page.get_by_role("button", name="Today").click()
 
-    @step("Settings: save profile")
-    def _():
-        page.get_by_role("link", name="Settings").first.click()
-        page.wait_for_url("**/settings")
-        page.get_by_label("Current balance (₹)").fill("42500")
-        page.get_by_label("Salary day").fill("1")
-        page.get_by_role("button", name="Save changes").click()
-        expect(page.get_by_text("Saved.")).to_be_visible()
-
     @step("Overview shows balance and penalties at stake")
     def _():
         page.get_by_role("link", name="Overview").first.click()
         expect(page.get_by_text("₹42,500.00").first).to_be_visible()
         expect(page.get_by_text("Penalties at stake")).to_be_visible()
+
+    @step("Penalty Fighter: overdue SMS -> draft, copy, record outcome")
+    def _():
+        page.get_by_role("link", name="Connect").first.click()
+        page.wait_for_url("**/connect")
+        late = page.locator("li", has=page.get_by_text("was due on"))
+        late.get_by_role("button", name=re.compile("Forward to Lifeline")).click()
+        page.wait_for_timeout(1500)
+        page.get_by_role("link", name=re.compile("^Review")).first.click()
+        page.wait_for_url("**/inbox")
+        card = page.locator("article", has=page.get_by_text("2310", exact=False))
+        if card.count():
+            card.first.get_by_role("button", name="Confirm").click()
+            page.wait_for_timeout(800)
+        page.get_by_role("link", name="Bills").first.click()
+        page.wait_for_url("**/bills")
+        bill = page.locator("main li").filter(has=page.get_by_text("days overdue")).first
+        bill.locator("button").first.click()
+        bill.get_by_role("button", name="Draft waiver request").click()
+        box = bill.get_by_label("Waiver request draft")
+        expect(box).to_contain_text("waive")
+        expect(box).to_contain_text("[your account number]")
+        bill.get_by_role("button", name="Copy text").click()
+        bill.get_by_role("button", name=re.compile("Waived")).click()
+        expect(bill.get_by_text("Recorded: granted")).to_be_visible()
+
+    @step("Settings: salary amount + family contact add/remove")
+    def _():
+        page.get_by_role("link", name="Settings").first.click()
+        page.wait_for_url("**/settings")
+        page.get_by_label("Monthly salary (₹, optional)").fill("60000")
+        page.get_by_role("button", name="Save changes").click()
+        expect(page.get_by_text("Saved.")).to_be_visible()
+        page.get_by_label("Family member name").fill("Amma")
+        page.get_by_label("Family member phone").fill("+919811100099")
+        page.get_by_role("button", name="Add family contact").click()
+        expect(page.get_by_text("They must agree")).to_be_visible()
+        page.get_by_label("They agreed to receive these alerts.").check()
+        page.get_by_role("button", name="Add family contact").click()
+        expect(page.get_by_text("+919811100099")).to_be_visible()
+        page.get_by_role("button", name="Remove Amma").click()
+        expect(page.get_by_text("+919811100099")).to_have_count(0)
 
     @step("Reset demo clears everything and the phone refills")
     def _():
@@ -216,6 +317,27 @@ with sync_playwright() as p:
         page.get_by_role("button", name=re.compile("Panel Judge")).click()
         page.get_by_role("menuitem", name="Sign out").click()
         page.wait_for_url("**/login")
+
+    @step("Sign back in, then Delete all my data")
+    def _():
+        page.goto(BASE + "/login")
+        page.get_by_role("button", name="Sign in", exact=True).click()
+        page.get_by_label("Email").fill(judge_email)
+        page.get_by_label("Password").fill("password123")
+        page.get_by_role("button", name="Sign in", exact=True).last.click()
+        page.wait_for_url("**/connect")
+        page.get_by_role("link", name="Settings").first.click()
+        page.wait_for_url("**/settings")
+        btn = page.get_by_role("button", name="Delete everything")
+        expect(btn).to_be_disabled()
+        page.get_by_label("Type DELETE to confirm").fill("DELETE")
+        btn.click()
+        page.wait_for_url("**/login")
+        page.get_by_role("button", name="Sign in", exact=True).click()
+        page.get_by_label("Email").fill(judge_email)
+        page.get_by_label("Password").fill("password123")
+        page.get_by_role("button", name="Sign in", exact=True).last.click()
+        expect(page.get_by_text(re.compile("Wrong email or password"))).to_be_visible()
 
     browser.close()
 

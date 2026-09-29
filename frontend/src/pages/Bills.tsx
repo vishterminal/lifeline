@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { api, ApiError, day, money, pretty, type RankedBill, type WhatIf } from '../api'
 import { Badge, Button, EmptyState, Notice, OriginBadge, PageHeader, TrustBadge } from '../ui'
@@ -35,7 +36,8 @@ function PayDialog({ bill, onClose }: { bill: RankedBill; onClose: () => void })
     mutationFn: () => api(`/obligations/${bill.id}/pay-mock`, { method: 'POST' }),
     onSuccess: () => { setDone(true); ['bills', 'obligations'].forEach((k) => qc.invalidateQueries({ queryKey: [k] })) },
   })
-  return (
+  // Portal to <body>: a transformed ancestor (card hover lift) would otherwise trap position:fixed.
+  return createPortal(
     <div className="fixed inset-0 z-40 grid place-items-center bg-black/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="pay-title">
       <div className="glass w-full max-w-md rounded-[var(--radius-card)] p-6">
         <div className="mb-4 rounded-xl border border-gold/40 bg-gold/10 px-3 py-2 text-sm font-semibold text-gold">⚠ Simulated — no real money moves</div>
@@ -50,6 +52,47 @@ function PayDialog({ bill, onClose }: { bill: RankedBill; onClose: () => void })
           <Button variant="secondary" onClick={onClose}>{done ? 'Done' : 'Cancel'}</Button>
         </div>
       </div>
+    </div>,
+    document.body,
+  )
+}
+
+function PenaltyFighter({ bill }: { bill: RankedBill }) {
+  const [draft, setDraft] = useState<{ draft_id: string; text: string; likelihood: string } | null>(null)
+  const [copied, setCopied] = useState(false)
+  const [outcome, setOutcome] = useState<string | null>(null)
+  const [err, setErr] = useState<string | null>(null)
+  const make = useMutation({
+    mutationFn: () => api<{ draft_id: string; text: string; likelihood: string }>(`/obligations/${bill.id}/waiver-draft`, { method: 'POST' }),
+    onSuccess: (r) => { setDraft(r); setErr(null) },
+    onError: (e) => setErr(e instanceof ApiError ? e.message : 'Failed'),
+  })
+  const record = useMutation({
+    mutationFn: (o: 'GRANTED' | 'DENIED') => api(`/waiver-drafts/${draft!.draft_id}`, { method: 'PATCH', json: { outcome: o } }),
+    onSuccess: (_r, o) => setOutcome(o),
+  })
+  return (
+    <div className="glass-inner rounded-2xl p-4 md:col-span-2">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex-1"><b className="text-gold">✍️ Penalty Fighter</b><div className="text-sm text-muted">This bill is overdue. Draft a polite request to waive the late fee — built only from facts, you review and send it.</div></div>
+        <Button onClick={() => make.mutate()} disabled={make.isPending}>{make.isPending ? 'Drafting…' : draft ? 'Redraft' : 'Draft waiver request'}</Button>
+      </div>
+      {err && <div className="mt-3"><Notice tone="error">{err}</Notice></div>}
+      {draft && (
+        <div className="mt-3 space-y-3">
+          <textarea readOnly value={draft.text} aria-label="Waiver request draft" rows={12} className="w-full rounded-xl border border-line-strong bg-bg/60 p-3 font-mono text-xs text-ink" />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="secondary" onClick={() => { navigator.clipboard?.writeText(draft.text); setCopied(true) }}>{copied ? '✓ Copied' : 'Copy text'}</Button>
+            <span className="text-xs text-muted">Chance of waiver: {draft.likelihood}</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-ink-2">After you send it — what happened?</span>
+            <Button variant="secondary" onClick={() => record.mutate('GRANTED')} disabled={record.isPending}>Waived 🎉</Button>
+            <Button variant="ghost" onClick={() => record.mutate('DENIED')} disabled={record.isPending}>Refused</Button>
+            {outcome && <Badge tone={outcome === 'GRANTED' ? 'green' : 'slate'}>Recorded: {outcome.toLowerCase()}</Badge>}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -61,7 +104,9 @@ function BillDetail({ bill }: { bill: RankedBill }) {
   const [err, setErr] = useState<string | null>(null)
   const wi = useQuery({ queryKey: ['whatif', bill.id], queryFn: () => api<WhatIf>(`/obligations/${bill.id}/whatif`), enabled: false })
   const act = useMutation({
-    mutationFn: (a: 'mark-paid' | 'dismiss') => api(`/obligations/${bill.id}/${a}`, { method: 'POST' }),
+    mutationFn: (a: 'mark-paid' | 'dismiss' | 'snooze-15' | 'snooze-30') => a.startsWith('snooze')
+      ? api(`/obligations/${bill.id}/snooze`, { method: 'POST', json: { minutes: Number(a.split('-')[1]) } })
+      : api(`/obligations/${bill.id}/${a}`, { method: 'POST' }),
     onSuccess: () => ['bills', 'obligations'].forEach((k) => qc.invalidateQueries({ queryKey: [k] })),
     onError: (e) => setErr(e instanceof ApiError ? e.message : 'Failed'),
   })
@@ -116,9 +161,11 @@ function BillDetail({ bill }: { bill: RankedBill }) {
         <div className="flex flex-wrap gap-2 md:col-span-2">
           <Button onClick={() => setPaying(true)}>Pay now (simulated)</Button>
           <Button variant="secondary" onClick={() => act.mutate('mark-paid')} disabled={act.isPending}>I've paid this</Button>
+          <Button variant="secondary" onClick={() => act.mutate('snooze-30')} disabled={act.isPending}>Remind me in 30 min</Button>
           <Button variant="ghost" onClick={() => act.mutate('dismiss')} disabled={act.isPending}>Dismiss</Button>
         </div>
       )}
+      {(bill.status === 'OVERDUE' || (open && new Date(bill.due_date + 'T00:00:00') < new Date(new Date().toDateString()))) && <PenaltyFighter bill={bill} />}
       {err && <div className="md:col-span-2"><Notice tone="error">{err}</Notice></div>}
       {paying && <PayDialog bill={bill} onClose={() => setPaying(false)} />}
     </div>
@@ -139,9 +186,12 @@ export default function Bills() {
       <div>
         <PageHeader title="Bills" subtitle="Ranked by what missing them would really cost you — not just by date."
           actions={
+            <div className="flex flex-wrap items-center gap-2">
+            <Link to="/subscriptions" className="glass inline-flex min-h-11 items-center rounded-full px-4 text-sm font-medium text-ink-2 hover:text-gold">🔁 Subscriptions</Link>
             <div className="glass flex rounded-full p-1" role="tablist" aria-label="Sort bills">
               <button role="tab" aria-selected={sort === 'risk'} className={tabCls(sort === 'risk')} onClick={() => setSort('risk')}>By ₹ risk</button>
               <button role="tab" aria-selected={sort === 'date'} className={tabCls(sort === 'date')} onClick={() => setSort('date')}>By date</button>
+            </div>
             </div>
           } />
         {openBills.length > 0 && (

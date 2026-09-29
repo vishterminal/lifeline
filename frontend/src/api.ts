@@ -51,6 +51,7 @@ export interface User {
   salary_day: number | null
   balance_amount: string | null
   balance_as_of: string | null
+  salary_amount?: string | null
   allow_cloud_image_processing: boolean
   whatsapp_last_inbound_at: string | null
   is_demo?: boolean
@@ -189,3 +190,22 @@ export interface Consequence {
 }
 export interface RankedBill extends Obligation { consequence: Consequence; chain_hint: string | null }
 export interface WhatIf extends Consequence { skipped: string; timeline_effects: { date: string; text: string; amount: string | null }[] }
+
+export interface ReminderRow {
+  id: string; obligation_id: string; biller: string; amount: string | null; obligation_status: string
+  channel: 'IN_APP' | 'PUSH' | 'WHATSAPP' | 'FAMILY_WHATSAPP'; tier: string; stage: string; attempt_no: number
+  scheduled_for: string; status: string; message: string; simulated: boolean; ack_type: string | null; error: string | null
+}
+export interface FamilyContact { id: string; name: string; phone_e164: string; consented: boolean }
+export interface CashflowPlan {
+  needs_balance: boolean; assumptions: string[]; warnings: string[]
+  schedule: { obligation_id: string; biller: string; amount: string; due_date: string; pay_on: string | null; status: 'PLANNED' | 'SHORT'; risk: string }[]
+  balance_line: { date: string; balance: string; salary: boolean }[]
+  salary_days?: string[]; start_balance?: string; end_balance?: string
+}
+export interface SubscriptionRow {
+  obligation_id: string; biller: string; amount: string | null; next_renewal: string; interval_days: number | null
+  price_changed: boolean; monthly_cost: string | null; paid_last_12_months: string; category: string | null; manage_url: string | null
+}
+export interface Subscriptions { subscriptions: SubscriptionRow[]; duplicates: { category: string; services: string[] }[]; monthly_total: string; yearly_total: string; note: string }
+export interface Lifeload { score: number; label: string; items_next_7_days: number }
