@@ -47,11 +47,30 @@ def get_db() -> Iterator[Session]:
         db.close()
 
 
+def _add_missing_columns() -> None:
+    """Lightweight forward migration: add columns that newer code expects to an
+    existing database (new columns are all nullable or defaulted). IMPLEMENTATION
+    DECISION: stands in for Alembic while the schema is still moving."""
+    from sqlalchemy import inspect, text
+
+    insp = inspect(engine)
+    with engine.begin() as conn:
+        for table in Base.metadata.sorted_tables:
+            if not insp.has_table(table.name):
+                continue
+            have = {c["name"] for c in insp.get_columns(table.name)}
+            for col in table.columns:
+                if col.name not in have:
+                    ddl = col.type.compile(dialect=engine.dialect)
+                    conn.execute(text(f'ALTER TABLE "{table.name}" ADD COLUMN "{col.name}" {ddl}'))
+
+
 def init_db() -> None:
     from app import models  # noqa: F401  (register tables)
     from app.services.reference_seed import load_reference_seeds
 
     Base.metadata.create_all(bind=engine)
+    _add_missing_columns()
     with SessionLocal() as db:
         load_reference_seeds(db)
         db.commit()

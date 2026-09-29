@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     app_env: str = "development"
     public_base_url: str = "http://localhost:8000"
-    frontend_origin: str = "http://localhost:5173"
+    frontend_origin: str = "http://localhost:8000"  # web app is served by the backend
     jwt_secret: str = "change-me"
     jwt_expiry_hours: int = 24
     token_encryption_key: str = ""

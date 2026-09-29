@@ -83,6 +83,13 @@ def resolve_confirmation(conf_id: str, body: ResolveIn, user: User = Depends(cur
     res = pipeline.commit(db, user.id, fields, source_kind=conf.source_kind, origin=conf.origin,
                           trust_label=trust.get("label", "NOT_APPLICABLE"), trust_score=trust.get("score"),
                           confidence=1.0, agreed=True, user_confirmed=True)
+    obl = db.get(Obligation, res.obligation_id) if res.obligation_id else None
+    if obl is not None:  # the same bill may have arrived through several channels
+        kinds = list(obl.source_kinds or [])
+        for k in conf.draft.get("sources") or []:
+            if k not in kinds:
+                kinds.append(k)
+        obl.source_kinds = kinds
     conf.status, conf.resolved_at, conf.obligation_id = "CONFIRMED", now_utc(), res.obligation_id
     db.commit()
     return {"status": conf.status, **res.as_dict()}

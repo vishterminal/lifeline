@@ -1,0 +1,7 @@
+{
+  "from": "ShopKart Offers <offers@shopkart.example>",
+  "subject": "Big Savings Days are here!",
+  "authentication_results": "mx.google.com; dkim=pass; spf=pass; dmarc=pass",
+  "text": "Up to 70% off on electronics. Easy payment options and no-cost EMI available. Shop now!",
+  "hours_ago": 6
+}

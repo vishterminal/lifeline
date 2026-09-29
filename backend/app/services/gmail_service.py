@@ -305,9 +305,7 @@ def mock_inbox_names() -> list[str]:
 def fetch_mock(src: ConnectedSource) -> list[EmailMessage]:
     cursor = src.gmail_cursor_ms or 0
     msgs = [load_fixture(n) for n in mock_inbox_names()]
-    # The mock inbox holds only mail that "matches" the query: the fake-mail
-    # fixture is excluded here and is injected via /api/demo/simulate/fake-email.
-    return [m for m in msgs if m.internal_ms > cursor and not m.id.endswith("fake_netflix")]
+    return [m for m in msgs if m.internal_ms > cursor]
 
 
 # --- Poll -----------------------------------------------------------------------
@@ -324,9 +322,13 @@ def sync(db: Session, user: User) -> dict:
         src.status, src.last_error = "ERROR", str(e)[:500]
         return {"fetched": 0, "saved": 0, "needs_review": 0, "flagged": 0, "status": src.status, "error": src.last_error}
     counts = {"fetched": len(msgs), "saved": 0, "needs_review": 0, "flagged": 0}
+    items = []  # per-email result for the UI (sender + subject + outcome; nothing is stored)
+    origin = "REAL" if is_live() else "DEMO"
     for m in sorted(msgs, key=lambda x: x.internal_ms):
         res = pipeline.process_incoming(db, user, "GMAIL", m.body, pipeline.IncomingMeta(
-            sender=m.sender, sender_name=m.sender_name, auth_results=m.auth_results, links=m.links))
+            sender=m.sender, sender_name=m.sender_name, auth_results=m.auth_results, links=m.links, origin=origin))
+        items.append({"from": m.sender_name or m.sender, "address": m.sender, "subject": m.subject[:120],
+                      "outcome": res.outcome, "summary": res.summary, "reason": res.reason})
         if res.outcome in ("SAVED", "PAID_DETECTED", "CHARGE_RECORDED"):
             counts["saved"] += 1
         elif res.outcome == "NEEDS_CONFIRMATION":
@@ -338,4 +340,4 @@ def sync(db: Session, user: User) -> dict:
         # Fixture timestamps are relative to "now"; mark the mock inbox read up to now.
         src.gmail_cursor_ms = int(now_utc().timestamp() * 1000)
     src.status, src.last_error, src.last_sync_at = "CONNECTED", None, now_utc()
-    return {**counts, "status": src.status, "error": None}
+    return {**counts, "status": src.status, "error": None, "items": items}

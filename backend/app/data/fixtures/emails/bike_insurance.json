@@ -1,0 +1,7 @@
+{
+  "from": "Two-Wheeler Insurance <renewals@bike-insure.example>",
+  "subject": "Your two-wheeler insurance expires soon",
+  "authentication_results": "mx.google.com; dkim=pass; spf=pass; dmarc=pass",
+  "text": "Your two-wheeler insurance policy for TN09AB1234 expires on {{date:+21}}. Renewal premium Rs. 2,150.00. Note: a valid PUC certificate is required to renew.",
+  "hours_ago": 4
+}

@@ -219,7 +219,21 @@ def _type_for(fields: Extraction, match) -> str:
 
 def create_confirmation(db: Session, user_id: str, source_kind: str, origin: str, reason: str,
                         draft_fields: dict, rec=None, trust=None) -> PendingConfirmation:
+    # Same bill already waiting for review (e.g. arrived by email, now by WhatsApp)?
+    # Attach this source to it instead of asking the user twice.
+    if draft_fields.get("biller_norm") and draft_fields.get("due_date"):
+        for existing in db.scalars(select(PendingConfirmation).where(
+                PendingConfirmation.user_id == user_id, PendingConfirmation.status == "PENDING")):
+            ef = (existing.draft or {}).get("fields") or {}
+            if (ef.get("biller_norm"), ef.get("amount"), ef.get("due_date")) == (
+                    draft_fields.get("biller_norm"), draft_fields.get("amount"), draft_fields.get("due_date")):
+                srcs = list(existing.draft.get("sources") or [existing.source_kind])
+                if source_kind not in srcs:
+                    srcs.append(source_kind)
+                existing.draft = {**existing.draft, "sources": srcs}
+                return existing
     draft = {
+        "sources": [source_kind],
         "fields": draft_fields,
         "candidates": rec.candidates if rec else {},
         "mismatches": rec.mismatches if rec else [],

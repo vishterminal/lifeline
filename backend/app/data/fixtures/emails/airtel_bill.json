@@ -1,0 +1,7 @@
+{
+  "from": "Airtel <ebill@airtel-postpaid.example>",
+  "subject": "Your Airtel Postpaid bill is ready",
+  "authentication_results": "mx.google.com; dkim=pass; spf=pass; dmarc=pass",
+  "text": "Hi Ravi, your Airtel postpaid bill for September is Rs. 799.00. Amount payable Rs. 799.00, due on {{date:+9}}. Pay on time to avoid a late fee.",
+  "hours_ago": 5
+}

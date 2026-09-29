@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import logging
 import uuid
+from pathlib import Path
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from app import errors
 from app.config import get_settings
@@ -29,7 +30,7 @@ async def lifespan(app: FastAPI):
     scheduler.stop()
 
 
-app = FastAPI(title="Lifeline API (input side)", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Lifeline API", version="0.1.0", lifespan=lifespan)
 app.state.limiter = limiter
 errors.install(app)
 
@@ -42,7 +43,7 @@ async def _rate_limited(request: Request, exc: RateLimitExceeded):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[get_settings().frontend_origin],
+    allow_origins=sorted({get_settings().frontend_origin, "http://localhost:5173", "http://localhost:8000"}),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -77,5 +78,23 @@ def health():
             "local_ocr": "available" if upload_service.ocr_available() else "unavailable",
         },
         "missing_variables": s.missing_variables(),
-        "scope": "input side only (reminders, push, outbound WhatsApp, pay not built yet)",
+        # Judge mode = no Google/Twilio keys: every source runs on realistic sample data.
+        "judge_mode": not (s.gmail_live or s.twilio_live or s.google_login_live),
     }
+
+
+# --- Serve the built web app (frontend/dist) so one command + one URL is enough ------------
+DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+def spa(full_path: str):
+    if full_path.startswith("api/"):
+        return JSONResponse({"error": {"code": "NOT_FOUND", "message": "Not found", "details": {}}}, status_code=404)
+    target = (DIST / full_path).resolve()
+    if full_path and target.is_file() and DIST in target.parents:
+        return FileResponse(target)
+    index = DIST / "index.html"
+    if index.is_file():
+        return FileResponse(index)
+    return JSONResponse({"message": "Web app not built. Run: cd frontend && npm install && npm run build"}, status_code=503)

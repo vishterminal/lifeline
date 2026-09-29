@@ -56,7 +56,10 @@ def test_gmail_mock_connect_sync_disconnect(client, user):
     # state is single-use
     assert client.get(path, follow_redirects=False).status_code == 403
     res = client.post("/api/sources/gmail/sync", headers=h).json()
-    assert res["fetched"] >= 3 and res["flagged"] == 0  # fake mail isn't in the mock inbox
+    assert res["fetched"] >= 3 and res["flagged"] == 1  # the sample inbox includes one phishing mail
+    outcomes = {i["subject"]: i["outcome"] for i in res["items"]}
+    assert outcomes["URGENT: Your Netflix payment is due"] == "SUSPICIOUS"
+    assert outcomes["Big Savings Days are here!"] == "DROPPED_NOT_BILL"
     again = client.post("/api/sources/gmail/sync", headers=h).json()
     assert again["fetched"] == 0  # cursor advanced
     assert client.delete("/api/sources/gmail", headers=h).json()["status"] == "DISCONNECTED"
