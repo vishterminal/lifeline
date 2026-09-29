@@ -10,6 +10,8 @@ import re, sys, traceback
 from playwright.sync_api import sync_playwright, expect
 
 BASE = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8000"
+if "localhost" not in BASE:
+    expect.set_options(timeout=15_000)  # hosted serverless API: allow for cold starts
 results, errors = [], []
 
 
