@@ -80,7 +80,7 @@ def gmail_connect(user: User = Depends(current_user), db: Session = Depends(get_
 @router.get("/gmail/callback")
 def gmail_callback(code: str | None = None, state: str | None = None, error: str | None = None,
                    db: Session = Depends(get_db)):
-    front = get_settings().frontend_origin
+    front = get_settings().front_url("")
     if error:
         return RedirectResponse(f"{front}/connect?gmail=denied")
     try:

@@ -86,6 +86,13 @@ class Settings(BaseSettings):
     def push_enabled(self) -> bool:
         return bool(self.vapid_public_key and self.vapid_private_key)
 
+    def front_url(self, path: str) -> str:
+        """Where to send the browser in the web app. When the backend serves the app
+        itself (judge setup), use a relative path so any port works."""
+        if self.frontend_origin.rstrip("/") == self.public_base_url.rstrip("/"):
+            return path
+        return self.frontend_origin.rstrip("/") + path
+
     def missing_variables(self) -> dict[str, list[str]]:
         missing: dict[str, list[str]] = {}
 

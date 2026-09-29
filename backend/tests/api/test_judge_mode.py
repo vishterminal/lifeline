@@ -10,7 +10,7 @@ def test_judge_demo_end_to_end(client, user):
 
     # Gmail sample inbox
     url = client.get("/api/sources/gmail/connect", headers=h).json()["auth_url"]
-    client.get(url.split("lifeline.test", 1)[1], follow_redirects=False)
+    client.get(url.split("lifeline.test", 1)[-1], follow_redirects=False)
     sync = client.post("/api/sources/gmail/sync", headers=h).json()
     assert sync["flagged"] == 1 and sync["needs_review"] >= 3
 

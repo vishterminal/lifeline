@@ -77,7 +77,7 @@ def build_auth_url(db: Session, user: User) -> str:
     src.oauth_state = secrets.token_urlsafe(32)
     if not is_live():
         # Mock: the "consent screen" is our own callback with a fake code.
-        return f"{s.public_base_url}/api/sources/gmail/callback?" + urlencode({"code": "mock-code", "state": src.oauth_state})
+        return "/api/sources/gmail/callback?" + urlencode({"code": "mock-code", "state": src.oauth_state})
     return AUTH_URL + "?" + urlencode({
         "client_id": s.google_client_id,
         "redirect_uri": s.google_redirect_uri,

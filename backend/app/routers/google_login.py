@@ -31,7 +31,7 @@ COOKIE = "lifeline_g_state"
 
 
 def _front(path: str) -> str:
-    return get_settings().frontend_origin.rstrip("/") + path
+    return get_settings().front_url(path)
 
 
 @router.get("/start")

@@ -50,7 +50,7 @@ def test_gmail_mock_connect_sync_disconnect(client, user):
     h, _ = user
     url = client.get("/api/sources/gmail/connect", headers=h).json()["auth_url"]
     assert "state=" in url
-    path = url.split("lifeline.test", 1)[1]
+    path = url.split("lifeline.test", 1)[-1]
     r = client.get(path, follow_redirects=False)
     assert r.status_code in (302, 307) and "gmail=connected" in r.headers["location"]
     # state is single-use
@@ -74,7 +74,7 @@ def test_gmail_expired_token_needs_reconnect(client, user, monkeypatch):
 
     h, _ = user
     url = client.get("/api/sources/gmail/connect", headers=h).json()["auth_url"]
-    client.get(url.split("lifeline.test", 1)[1], follow_redirects=False)
+    client.get(url.split("lifeline.test", 1)[-1], follow_redirects=False)
 
     def boom(src):
         raise gmail_service.NeedsReconnect("invalid_grant")
