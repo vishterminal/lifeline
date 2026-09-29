@@ -33,6 +33,8 @@ _DUE_CTX = re.compile(r"(due|on or before|before|by|expires?|expiry|valid till|v
 _VEHICLE = re.compile(r"\b[A-Z]{2}[ -]?\d{1,2}[ -]?[A-Z]{1,3}[ -]?\d{4}\b")
 
 _KIND_RULES: list[tuple[str, re.Pattern]] = [
+    # "Rs.649 will be debited on 5 Oct (AutoPay)" announces a future charge: a renewal, not a payment.
+    ("RENEWAL_NOTICE", re.compile(r"will be debited|to be debited|pre-?debit|scheduled debit", re.I)),
     ("PAYMENT_CONFIRMATION", re.compile(r"\bdebited\b|payment (?:was )?successful|paid successfully|has been paid|thank you for (?:your )?payment|payment of .* (?:is )?successful|transaction successful", re.I)),
     ("RECEIPT", re.compile(r"\breceipt\b|payment received|\bcharged\b|we(?:'ve| have) received your payment|invoice paid", re.I)),
     ("RENEWAL_NOTICE", re.compile(r"\brenew(?:al|ed|s)?\b|\bexpir(?:es|y|ing|ed)\b|valid (?:till|until)", re.I)),

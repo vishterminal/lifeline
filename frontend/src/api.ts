@@ -107,6 +107,8 @@ export interface Obligation {
   created_at: string
   price_changed: boolean
   paid_via: string | null
+  autopay: boolean
+  usage: 'USING' | 'NOT_USING' | null
 }
 
 export interface DraftFields {
@@ -188,7 +190,8 @@ export interface Consequence {
   label: 'VERIFIED' | 'ESTIMATED' | 'UNKNOWN'; tier: 'HIGH' | 'MEDIUM' | 'LOW'
   sources: string[]; explanation: string[]; upstream: ChainLink[]; downstream_links: ChainLink[]; chain_hint: string | null
 }
-export interface RankedBill extends Obligation { consequence: Consequence; chain_hint: string | null }
+export interface BillShock { usual: string; pct: number; extra: string; based_on: number; history: { date: string; amount: string }[] }
+export interface RankedBill extends Obligation { consequence: Consequence; chain_hint: string | null; shock: BillShock | null }
 export interface WhatIf extends Consequence { skipped: string; timeline_effects: { date: string; text: string; amount: string | null }[] }
 
 export interface ReminderRow {
@@ -206,8 +209,9 @@ export interface CashflowPlan {
 export interface SubscriptionRow {
   obligation_id: string; biller: string; amount: string | null; next_renewal: string; interval_days: number | null
   price_changed: boolean; monthly_cost: string | null; paid_last_12_months: string; category: string | null; manage_url: string | null
+  autopay: boolean; usage: 'USING' | 'NOT_USING' | null
 }
-export interface Subscriptions { subscriptions: SubscriptionRow[]; duplicates: { category: string; services: string[] }[]; monthly_total: string; yearly_total: string; note: string }
+export interface Subscriptions { subscriptions: SubscriptionRow[]; duplicates: { category: string; services: string[] }[]; monthly_total: string; yearly_total: string; note: string; potential_savings_yearly: string; autopay_count: number }
 export interface Lifeload { score: number; label: string; items_next_7_days: number }
 
 export interface MonthlyReport {

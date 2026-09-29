@@ -35,6 +35,10 @@ SMS_FIXTURES = {
              "Overdue bill -> Penalty Fighter can draft a waiver"),
     "hindi": ("VM-JIOINF", "प्रिय ग्राहक, आपके Jio पोस्टपेड बिल ₹599 की देय तिथि {{date:+6}} है। कृपया समय पर भुगतान करें।",
               "Hindi bill -> understood like any other"),
+    "predebit": ("VM-HDFCBK", "Dear customer, Rs.649.00 will be debited from your card XX1234 on {{date:+1}} towards NETFLIX (AutoPay e-mandate). To stop, manage the mandate in your bank app.",
+                 "AutoPay pre-debit -> warned before it charges: still using it?"),
+    "shock": ("VM-TNEBLT", "TNEB: Your electricity bill of Rs.2,950.00 is due on {{date:+30}}. Pay to avoid late fee.",
+              "Much higher than your usual TNEB bill -> bill-shock alert (send the TNEB bill first)"),
     "debit": ("VM-HDFCBK", "Rs.1840.00 debited from A/c XX1234 to TNEB on {{date:+0}}. Avl bal Rs.20,150.00",
               "Payment → matching bill marked paid automatically"),
 }

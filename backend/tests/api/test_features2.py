@@ -113,6 +113,9 @@ def test_push_endpoints(client, user, monkeypatch):
     monkeypatch.setattr(get_settings(), "vapid_public_key", "pub")
     monkeypatch.setattr(get_settings(), "vapid_private_key", "priv")
     monkeypatch.setattr(push_service, "send", lambda db, u, t, b, url="/": sent.append(b) or 1)
+    from app.services import reminder_service
+
+    monkeypatch.setattr(reminder_service, "in_quiet_hours", lambda u, now: False)  # any time of day
     _add(client, h, biller="Bike insurance", type="INSURANCE_VEHICLE", amount=2150, due_date=_d(3))
     client.post("/api/reminders/tick", headers=h)
     assert sent and "Bike insurance" in sent[0]

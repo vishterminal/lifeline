@@ -137,6 +137,8 @@ class Obligation(Base):
     recurrence_interval_days: Mapped[int | None] = mapped_column(Integer)
     next_expected_date: Mapped[date | None] = mapped_column(Date)
     price_changed: Mapped[bool] = mapped_column(Boolean, default=False)
+    autopay: Mapped[bool] = mapped_column(Boolean, default=False)  # charged automatically (mandate / pre-debit notice)
+    usage: Mapped[str | None] = mapped_column(String(12))  # USING | NOT_USING: the user's own answer
     early_discount_pct: Mapped[float | None] = mapped_column(Float)
     early_discount_until: Mapped[date | None] = mapped_column(Date)
     snoozed_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

@@ -211,6 +211,7 @@ def subscriptions(user: User = Depends(current_user), db: Session = Depends(get_
                      "interval_days": o.recurrence_interval_days, "price_changed": o.price_changed,
                      "monthly_cost": str(monthly.quantize(Decimal("1"))) if monthly else None,
                      "paid_last_12_months": str(paid), "category": a.category if a else None,
+                     "autopay": o.autopay, "usage": o.usage,
                      "manage_url": a.official_account_url if a else None})
     by_cat = defaultdict(list)
     for r in rows:
@@ -218,9 +219,27 @@ def subscriptions(user: User = Depends(current_user), db: Session = Depends(get_
             by_cat[r["category"]].append(r["biller"])
     duplicates = [{"category": k.replace("_", " ").title(), "services": v} for k, v in by_cat.items() if len(v) > 1]
     monthly_total = sum((Decimal(r["monthly_cost"]) for r in rows if r["monthly_cost"]), Decimal(0))
+    unused = sum((Decimal(r["monthly_cost"]) for r in rows if r["usage"] == "NOT_USING" and r["monthly_cost"]), Decimal(0))
     return {"subscriptions": rows, "duplicates": duplicates, "monthly_total": str(monthly_total),
+            "potential_savings_yearly": str(unused * 12),
+            "autopay_count": sum(1 for r in rows if r["autopay"]),
             "yearly_total": str(monthly_total * 12),
             "note": "Usage-based suggestions (e.g. 'unused for 40 days') need data Lifeline doesn't have."}
+
+
+class UsageIn(BaseModel):
+    using: bool
+
+
+@router.post("/subscriptions/{oid}/usage")
+def set_usage(oid: str, body: UsageIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """The user's answer to "Still using it?" (Lifeline can't see usage; it asks)."""
+    o = _own(db, oid, user)
+    if not o.is_recurring:
+        raise ApiError(409, "Only subscriptions can be marked as used or not used.")
+    o.usage = "USING" if body.using else "NOT_USING"
+    db.commit()
+    return {"obligation_id": o.id, "usage": o.usage}
 
 
 # --- Delete all my data ---------------------------------------------------------------------

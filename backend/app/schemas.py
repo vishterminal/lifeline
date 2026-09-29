@@ -130,6 +130,8 @@ class ObligationOut(BaseModel):
     recurrence_interval_days: int | None
     next_expected_date: date | None
     price_changed: bool
+    autopay: bool = False
+    usage: str | None = None
     paid_via: str | None
     created_at: datetime
 

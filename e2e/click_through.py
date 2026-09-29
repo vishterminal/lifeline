@@ -208,15 +208,43 @@ with sync_playwright() as p:
         expect(page.get_by_role("heading", name="Payment schedule")).to_be_visible()
         expect(page.get_by_text(re.compile("Balance is a snapshot"))).to_be_visible()
 
-    @step("Subscriptions: keep and cancel")
+    @step("AutoPay pre-debit SMS and a much higher TNEB bill -> confirm both")
+    def _():
+        page.get_by_role("link", name="Connect").first.click()
+        page.wait_for_url("**/connect")
+        for text in ("towards NETFLIX (AutoPay", "Rs.2,950.00"):
+            sms = page.locator("li", has=page.get_by_text(text, exact=False))
+            sms.get_by_role("button", name=re.compile("Forward to Lifeline")).click()
+            page.wait_for_timeout(1200)
+        page.get_by_role("link", name=re.compile("^Review")).first.click()
+        page.wait_for_url("**/inbox")
+        for amount in ("649.00", "2950.00"):
+            card = page.locator(f"article:has(input[value='{amount}'])")
+            if card.count():
+                card.first.get_by_role("button", name="Confirm").click()
+                page.wait_for_timeout(900)
+
+    @step("Bills: bill-shock alert and AutoPay notice")
     def _():
         page.get_by_role("link", name="Bills").first.click()
         page.wait_for_url("**/bills")
+        expect(page.get_by_text(re.compile("Bill shock:")).first).to_be_visible()
+        expect(page.get_by_text(re.compile(r"\d+% higher than usual")).first).to_be_visible()
+        expect(page.get_by_text(re.compile("AutoPay: this will be charged automatically")).first).to_be_visible()
+
+    @step("Subscriptions: AutoPay, still using it? yes/no, savings, cancel")
+    def _():
         page.get_by_role("link", name=re.compile("Subscriptions")).click()
         page.wait_for_url("**/subscriptions")
         expect(page.get_by_text("Per year")).to_be_visible()
-        page.get_by_role("button", name="Keep").first.click()
+        net = page.locator("section.glass", has=page.get_by_text("Netflix", exact=True)).filter(has=page.get_by_text("⚡ AutoPay")).first
+        expect(net.get_by_text(re.compile("will be charged automatically tomorrow"))).to_be_visible()
+        net.get_by_role("button", name="No, not using").click()
+        expect(page.get_by_text(re.compile("saves about"))).to_be_visible()
+        expect(net.get_by_text("✗ Not using it")).to_be_visible()
+        net.get_by_role("button", name="Yes, keep").click()
         expect(page.get_by_text(re.compile("Kept"))).to_be_visible()
+        expect(page.get_by_text(re.compile("saves about"))).to_have_count(0)
         with page.context.expect_page() as pop:
             page.get_by_role("button", name="Cancel").first.click()
         pop.value.close()

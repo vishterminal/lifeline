@@ -15,7 +15,7 @@ from app.deps import current_user
 from app.errors import ApiError
 from app.models import Obligation, Payment, User
 from app.schemas import ObligationOut
-from app.services import reminder_service, risk_service
+from app.services import reminder_service, risk_service, shock_service
 from app.timeutil import now_utc, today_local
 
 router = APIRouter(tags=["bills"])
@@ -34,7 +34,8 @@ def _own(db: Session, oid: str, user: User) -> Obligation:
 
 def _with_risk(o: Obligation, everything: list[Obligation]) -> dict:
     c = risk_service.assess(o, everything, today_local())
-    return {**ObligationOut.model_validate(o).model_dump(mode="json"), "consequence": c.as_dict(), "chain_hint": c.chain_hint}
+    return {**ObligationOut.model_validate(o).model_dump(mode="json"), "consequence": c.as_dict(), "chain_hint": c.chain_hint,
+            "shock": shock_service.bill_shock(o, everything) if o.status in risk_service.OPEN else None}
 
 
 @router.get("/bills")

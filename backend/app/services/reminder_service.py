@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.models import FamilyContact, Obligation, Reminder, User
-from app.services import risk_service
+from app.services import risk_service, shock_service
 from app.timeutil import tz
 
 log = logging.getLogger("lifeline.reminders")
@@ -62,10 +62,16 @@ def _money(v) -> str:
     return "amount unknown" if v is None else f"₹{Decimal(v):,.0f}"
 
 
-def message_for(o: Obligation, c: risk_service.Consequence, days_left: int) -> str:
+def message_for(o: Obligation, c: risk_service.Consequence, days_left: int, shock: dict | None = None) -> str:
     when = "today" if days_left == 0 else "tomorrow" if days_left == 1 else \
         f"{-days_left} day(s) ago" if days_left < 0 else f"in {days_left} days"
+    if o.autopay and days_left >= 0:
+        ask = " You said you're not using it." if o.usage == "NOT_USING" else " Still using it?"
+        return (f"⚡ AutoPay: {o.biller_raw or o.biller_norm} will charge {_money(o.amount)} automatically {when}.{ask} "
+                "Cancel before it charges if you don't need it.")[:400]
     head = f"{o.biller_raw or o.biller_norm} {_money(o.amount)} {'was due' if days_left < 0 else 'due'} {when}."
+    if shock:
+        head += f" ⚠ {shock['pct']}% higher than your usual {_money(shock['usual'])}."
     risk = f" {_money(c.total)} at risk if missed ({c.label.lower()})." if c.total else ""
     chain = f" {c.chain_hint}." if c.chain_hint else ""
     return (head + risk + chain + " Reply PAID after paying, or 15 / 30 to be reminded later.")[:400]
@@ -134,10 +140,11 @@ def tick(db: Session, user: User, now: datetime | None = None, simulated: bool =
         days_left = (o.due_date - today).days
         c = risk_service.assess(o, obls, today)
         tier = c.tier
+        shock = shock_service.bill_shock(o, obls)
         prior = list(db.scalars(select(Reminder).where(Reminder.obligation_id == o.id)))
         if days_left < 0:
             if not any(r.stage == "OVERDUE" for r in prior):  # a single overdue nudge
-                _deliver(db, user, o, "IN_APP", tier, "OVERDUE", 1, now, message_for(o, c, days_left), simulated, res)
+                _deliver(db, user, o, "IN_APP", tier, "OVERDUE", 1, now, message_for(o, c, days_left, shock), simulated, res)
             continue
         d = _stage_for(tier, days_left)
         if d is None:
@@ -164,7 +171,7 @@ def tick(db: Session, user: User, now: datetime | None = None, simulated: bool =
                 res.skipped += 1
             continue
         attempt = len(done) + 1
-        text = message_for(o, c, days_left)
+        text = message_for(o, c, days_left, shock)
         channels = LADDER[tier][d] if attempt == 1 else ("IN_APP", "PUSH", "WHATSAPP")
         for ch in channels:
             status = _deliver(db, user, o, ch, tier, stage, attempt, now, text, simulated, res)

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import { api, ApiError, day, money, pretty, type RankedBill, type SplitState, type WhatIf } from '../api'
+import { api, ApiError, day, money, pretty, type BillShock, type RankedBill, type SplitState, type WhatIf } from '../api'
 import { Badge, Button, EmptyState, inputCls, Notice, OriginBadge, PageHeader, TrustBadge } from '../ui'
 
 const ICON: Record<string, string> = {
@@ -16,6 +16,26 @@ function daysLeft(iso: string) {
   if (d === 0) return 'due today'
   if (d === 1) return 'due tomorrow'
   return d < 0 ? `${-d} days overdue` : `in ${d} days`
+}
+
+function ShockBox({ shock }: { shock: BillShock }) {
+  const max = Math.max(...shock.history.map((h) => Number(h.amount)))
+  return (
+    <div className="mt-2 rounded-lg border border-red-400/25 bg-red-500/10 px-2.5 py-2 text-sm text-red-200">
+      <div>⚠ {shock.pct}% higher than your usual {money(shock.usual)} (+{money(shock.extra)}), based on your last {shock.based_on} bill{shock.based_on === 1 ? '' : 's'}</div>
+      <div className="mt-2 flex h-12 items-end gap-1.5" aria-label="Your recent bills from this biller">
+        {shock.history.map((h, i) => {
+          const last = i === shock.history.length - 1
+          return (
+            <div key={h.date + i} className="flex flex-col items-center gap-0.5" title={`${day(h.date)}: ${money(h.amount)}`}>
+              <div className={`w-6 rounded-t ${last ? 'bg-red-400' : 'bg-ink-2/40'}`} style={{ height: `${Math.max(8, (Number(h.amount) / max) * 36)}px` }} />
+              <span className="num text-[10px] text-muted">{money(h.amount)}</span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 export function RiskBadge({ tier }: { tier: 'HIGH' | 'MEDIUM' | 'LOW' }) {
@@ -264,6 +284,9 @@ export default function Bills() {
             <VerifiedBadge label={openBills.every((b) => b.consequence.label === 'VERIFIED') ? 'VERIFIED' : 'ESTIMATED'} />
           </div>
         )}
+        {openBills.filter((b) => b.shock).map((b) => (
+          <div key={b.id} className="mb-3"><Notice tone="warn">⚠ <b>Bill shock:</b> {b.biller_raw ?? b.biller_norm} is <b>{money(b.amount)}</b>, {b.shock!.pct}% higher than your usual {money(b.shock!.usual)} (+{money(b.shock!.extra)}). Check the reading or the tariff before you pay.</Notice></div>
+        ))}
         {bills.isLoading && <p className="text-muted">Loading…</p>}
         {bills.isError && <Notice tone="error">Couldn't load bills. <button className="underline" onClick={() => bills.refetch()}>Retry</button></Notice>}
         {bills.data?.length === 0 && <EmptyState>Nothing tracked yet — <Link to="/connect" className="font-semibold text-gold underline">connect a source or run the demo</Link>.</EmptyState>}
@@ -286,12 +309,16 @@ export default function Bills() {
                         : <>{o.is_recurring ? 'Renews' : 'Due'} {day(o.due_date)} · <b>{daysLeft(o.due_date)}</b></>}
                     </div>
                     {isOpen && o.chain_hint && <div className="mt-2 rounded-lg border border-amber-400/25 bg-amber-500/10 px-2.5 py-1.5 text-sm text-amber-200">⛓ {o.chain_hint}</div>}
+                    {o.shock && <ShockBox shock={o.shock} />}
+                    {isOpen && o.autopay && <div className="mt-2 rounded-lg border border-sky-400/25 bg-sky-500/10 px-2.5 py-1.5 text-sm text-sky-200">⚡ AutoPay: this will be charged automatically on {day(o.due_date)}. <Link to="/subscriptions" className="font-semibold underline" onClick={(e) => e.stopPropagation()}>Still using it?</Link></div>}
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {isOpen && <RiskBadge tier={o.consequence.tier} />}
                       <OriginBadge origin={o.origin} />
                       {o.trust_label === 'NEW_BILLER_CONFIRM' ? <Badge tone="green">✓ Confirmed by you</Badge> : <TrustBadge label={o.trust_label} />}
                       {o.is_recurring && <Badge tone="sky">🔁 Recurring</Badge>}
                       {o.price_changed && <Badge tone="amber">Price changed</Badge>}
+                      {o.autopay && <Badge tone="sky">⚡ AutoPay</Badge>}
+                      {o.shock && <Badge tone="red">⚠ {o.shock.pct}% higher than usual</Badge>}
                       {o.status === 'OVERDUE' && <Badge tone="red">Overdue</Badge>}
                       {o.source_kinds.map((s) => <Badge key={s}>from {pretty(s)}</Badge>)}
                     </div>

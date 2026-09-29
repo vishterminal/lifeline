@@ -31,6 +31,7 @@ from app.timeutil import today_local
 log = logging.getLogger("lifeline.pipeline")
 
 MAX_TEXT = 20_000
+AUTOPAY_RE = re.compile(r"auto-?pay|e-?mandate|standing instruction|\bmandate\b|will be debited|to be debited|pre-?debit", re.I)
 CONFIDENCE_MIN = 0.6
 RECEIPT_KINDS = ("PAYMENT_CONFIRMATION", "RECEIPT")
 AMOUNT_REQUIRED_KINDS = ("DUE_NOTICE", "PAYMENT_CONFIRMATION", "RECEIPT")
@@ -183,6 +184,8 @@ def _process_bill(db: Session, user: User, source_kind: str, text: str, meta: In
         elif trust.needs_confirmation and trust.label != "NEW_BILLER_CONFIRM":
             reason = "MEDIUM_TRUST"
 
+    autopay = bool(AUTOPAY_RE.search(redacted))
+    otype = _type_for(fields, match)
     draft_fields = {
         "biller": match.display if match else fields.biller,
         "biller_norm": match.canonical if match else None,
@@ -191,7 +194,8 @@ def _process_bill(db: Session, user: User, source_kind: str, text: str, meta: In
         "due_date": fields.due_date.isoformat() if fields.due_date else None,
         "vehicle_ref": fields.vehicle_ref,
         "message_kind": fields.message_kind,
-        "recurrence_hint": fields.recurrence_hint,
+        "recurrence_hint": fields.recurrence_hint or ("MONTHLY" if autopay and otype == "SUBSCRIPTION" else None),
+        "autopay": autopay,
     }
     if reason:
         conf = create_confirmation(db, user.id, source_kind, meta.origin, reason, draft_fields, rec, trust)
@@ -282,6 +286,8 @@ def commit(db: Session, user_id: str, f: dict, *, source_kind: str, origin: str 
         if paid:
             return PipelineResult("PAID_DETECTED", obligation_id=paid.id,
                                   summary=f"Marked paid: {_describe(paid)}")
+        if sub and f.get("autopay"):
+            sub.autopay = True
         if sub:
             charge.obligation_id = charge.obligation_id or sub.id
             return PipelineResult("SAVED", obligation_id=sub.id, reason="recurring",
@@ -304,12 +310,28 @@ def commit(db: Session, user_id: str, f: dict, *, source_kind: str, origin: str 
 
     if when is None:
         raise ValueError("due_date required to save an obligation")
+    if f.get("autopay") and otype == "SUBSCRIPTION" and biller_norm:
+        sub = recurring_service.find_subscription(db, user_id, biller_norm)
+        if sub is not None:  # the bank's pre-debit notice confirms the next charge of a known subscription
+            sub.autopay, sub.due_date, sub.next_expected_date = True, when, when
+            if amount is not None and sub.amount is not None and abs(amount - sub.amount) > sub.amount * Decimal("0.05"):
+                sub.price_changed = True
+            if amount is not None:
+                sub.amount = amount
+            sub.fingerprint = dedup_service.fingerprint(sub.biller_norm, sub.type, sub.amount, sub.due_date, sub.vehicle_ref)
+            if source_kind not in (sub.source_kinds or []):
+                sub.source_kinds = [*(sub.source_kinds or []), source_kind]
+            db.flush()
+            return PipelineResult("SAVED", obligation_id=sub.id, reason="autopay_predebit",
+                                  summary=f"AutoPay: {_describe(sub)} will be charged automatically")
     fp = dedup_service.fingerprint(biller_norm, otype, amount, when, f.get("vehicle_ref"))
     existing = dedup_service.find_match(db, user_id, fp, biller_norm, otype, when)
     obl_fields = {"amount": amount, "due_date": when, "biller_raw": f.get("biller"),
                   "vehicle_ref": f.get("vehicle_ref"), "extractors_agreed": agreed}
     if existing:
         dedup_service.merge_into(existing, source_kind, obl_fields, confidence)
+        if f.get("autopay"):
+            existing.autopay = True
         db.flush()
         return PipelineResult("SAVED", obligation_id=existing.id, reason="merged",
                               summary=f"Already tracking: {_describe(existing)}")
@@ -321,7 +343,7 @@ def commit(db: Session, user_id: str, f: dict, *, source_kind: str, origin: str 
         confidence=confidence, extractors_agreed=agreed, message_kind=kind,
         vehicle_ref=f.get("vehicle_ref"), fingerprint=fp,
         is_recurring=bool(rec_hint), recurrence_interval_days={"MONTHLY": 30, "ANNUAL": 365}.get(rec_hint),
-        next_expected_date=when if rec_hint else None,
+        next_expected_date=when if rec_hint else None, autopay=bool(f.get("autopay")),
     )
     db.add(o)
     db.flush()

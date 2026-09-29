@@ -73,7 +73,8 @@ def test_quiet_hours_hold_reminders(client, user):
         assert res.sent == 0 and res.skipped == 1
 
 
-def test_snooze_and_paid_stop_reminders(client, user):
+def test_snooze_and_paid_stop_reminders(client, user, monkeypatch):
+    monkeypatch.setattr(reminder_service, "in_quiet_hours", lambda u, now: False)  # any time of day
     h, _ = user
     oid = _add(client, h, biller="Bike insurance", type="INSURANCE_VEHICLE", amount=2150, due_date=_d(1))
     client.post(f"/api/obligations/{oid}/snooze", json={"minutes": 30}, headers=h)
