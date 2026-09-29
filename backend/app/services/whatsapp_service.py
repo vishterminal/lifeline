@@ -1,7 +1,7 @@
-"""Twilio WhatsApp sandbox — inbound side (spec F4).
+"""Twilio WhatsApp sandbox (spec F4).
 
-Outbound reminders are not built yet (output side). Inbound replies use TwiML
-in the webhook response, which is always inside the 24-hour window.
+Inbound replies use TwiML in the webhook response (always inside the 24-hour window).
+Outbound reminders use send_whatsapp(); the reminder engine checks the window first.
 """
 from __future__ import annotations
 
@@ -14,6 +14,22 @@ import httpx
 from app.config import get_settings
 
 log = logging.getLogger("lifeline.whatsapp")
+
+def send_whatsapp(to_e164: str, text: str) -> bool:
+    """Outbound WhatsApp via Twilio (live only)."""
+    s = get_settings()
+    if not s.twilio_live:
+        return False
+    try:
+        from twilio.rest import Client
+
+        Client(s.twilio_account_sid, s.twilio_auth_token).messages.create(
+            from_=s.twilio_whatsapp_from, to=f"whatsapp:{to_e164}", body=text[:1500])
+        return True
+    except Exception as e:  # never crash the reminder tick
+        log.warning("whatsapp send failed: %s", type(e).__name__)
+        return False
+
 
 COMMAND_RE = re.compile(r"^\s*(paid(?:\s+\S+)?|15|30|help|what'?s due|whats due|dismiss)\s*$", re.I)
 

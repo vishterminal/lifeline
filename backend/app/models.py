@@ -68,6 +68,7 @@ class User(Base):
     timezone: Mapped[str] = mapped_column(String(64), default="Asia/Kolkata")
     salary_day: Mapped[int | None] = mapped_column(Integer)
     balance_amount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    salary_amount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))  # optional, for cash-flow planning
     balance_as_of: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     allow_cloud_image_processing: Mapped[bool] = mapped_column(Boolean, default=False)
     quiet_start: Mapped[time] = mapped_column(Time, default=time(21, 0))
@@ -224,4 +225,46 @@ class Payment(Base):
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     amount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     is_mock: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Reminder(Base):
+    """One reminder sent (or simulated) on one channel (spec F16)."""
+    __tablename__ = "reminders"
+    __table_args__ = (Index("ix_rem_obl_stage", "obligation_id", "stage"),)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    obligation_id: Mapped[str] = mapped_column(ForeignKey("obligations.id", ondelete="CASCADE"))
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    channel: Mapped[str] = mapped_column(String(20))  # IN_APP | PUSH | WHATSAPP | FAMILY_WHATSAPP
+    tier: Mapped[str] = mapped_column(String(8))
+    stage: Mapped[str] = mapped_column(String(12))  # T-7, T-3, T-1, T-0, OVERDUE
+    attempt_no: Mapped[int] = mapped_column(Integer, default=1)
+    scheduled_for: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(String(24))  # SENT | SIMULATED | SKIPPED_QUIET_HOURS | SKIPPED_WINDOW_CLOSED | FAILED
+    message: Mapped[str] = mapped_column(String(400))
+    simulated: Mapped[bool] = mapped_column(Boolean, default=False)  # created by "simulate next N days"
+    ack_type: Mapped[str | None] = mapped_column(String(12))  # PAID | SNOOZE_15 | SNOOZE_30 | DISMISS
+    ack_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error: Mapped[str | None] = mapped_column(String(200))
+
+
+class FamilyContact(Base):
+    __tablename__ = "family_contacts"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    phone_e164: Mapped[str] = mapped_column(String(20))
+    consented: Mapped[bool] = mapped_column(Boolean, default=False)
+    consented_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class WaiverDraft(Base):
+    __tablename__ = "waiver_drafts"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    obligation_id: Mapped[str] = mapped_column(ForeignKey("obligations.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    biller_norm: Mapped[str | None] = mapped_column(String(200))
+    draft_text: Mapped[str] = mapped_column(Text)
+    outcome: Mapped[str] = mapped_column(String(10), default="UNKNOWN")  # UNKNOWN | GRANTED | DENIED
+    outcome_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

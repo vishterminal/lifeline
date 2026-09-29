@@ -53,8 +53,26 @@ def handle_inbound(db: Session, params: dict, media_fetcher=None, origin: str = 
             return HELP_TEXT
         if "DUE" in cmd:
             return _whats_due(db, user)
-        # PAID / 15 / 30 / DISMISS act on reminders, which are not switched on yet.
-        return "Got it. Reply commands (PAID, 15, 30) will work once reminders are switched on."
+        from datetime import timedelta
+
+        from app.services import reminder_service
+
+        o = reminder_service.latest_reminded(db, user)
+        if o is None:
+            return "Nothing to act on yet - no reminder has been sent to you."
+        name = o.biller_raw or o.biller_norm
+        if cmd.startswith("PAID"):
+            o.status, o.paid_via, o.paid_at = "PAID", "USER_MARKED", now_utc()
+            reminder_service.acknowledge(db, o, "PAID")
+            return f"Marked {name} as paid. Reminders for it have stopped."
+        if cmd.startswith("DISMISS"):
+            o.status = "DISMISSED"
+            reminder_service.acknowledge(db, o, "DISMISS")
+            return f"Dismissed {name}. No more reminders for it."
+        minutes = 15 if cmd == "15" else 30
+        o.snoozed_until = now_utc() + timedelta(minutes=minutes)
+        reminder_service.acknowledge(db, o, f"SNOOZE_{minutes}")
+        return f"OK - I'll remind you about {name} again in {minutes} minutes."
 
     replies: list[str] = []
     try:

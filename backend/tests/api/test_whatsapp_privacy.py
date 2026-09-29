@@ -46,7 +46,7 @@ def test_forwarded_text_and_commands(client, user, twilio_token):
     assert wa["window_open"] and wa["status"] == "CONNECTED"
     assert "Commands" in _post(client, {"From": "whatsapp:+919800000003", "Body": "HELP"}, twilio_token).text
     assert "Nothing due" in _post(client, {"From": "whatsapp:+919800000003", "Body": "WHAT'S DUE"}, twilio_token).text
-    assert "reminders are switched on" in _post(client, {"From": "whatsapp:+919800000003", "Body": "PAID"}, twilio_token).text
+    assert "Nothing to act on yet" in _post(client, {"From": "whatsapp:+919800000003", "Body": "PAID"}, twilio_token).text
 
 
 def test_forwarded_media_goes_to_upload(client, db, user):

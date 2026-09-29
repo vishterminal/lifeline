@@ -15,7 +15,7 @@ from app.deps import current_user
 from app.errors import ApiError
 from app.models import Obligation, Payment, User
 from app.schemas import ObligationOut
-from app.services import risk_service
+from app.services import reminder_service, risk_service
 from app.timeutil import now_utc, today_local
 
 router = APIRouter(tags=["bills"])
@@ -63,10 +63,12 @@ def whatif(oid: str, user: User = Depends(current_user), db: Session = Depends(g
     return risk_service.what_if(_own(db, oid, user), _all(db, user), today_local())
 
 
-def _close(o: Obligation, status: str, via: str | None) -> None:
+def _close(o: Obligation, status: str, via: str | None, db: Session | None = None) -> None:
     if o.status not in risk_service.OPEN:
         raise ApiError(409, f"This bill is already {o.status.lower()}")
     o.status = status
+    if db is not None:  # everything stops the moment a bill is paid or dismissed
+        reminder_service.acknowledge(db, o, "PAID" if status == "PAID" else "DISMISS")
     if status == "PAID":
         o.paid_via, o.paid_at = via, now_utc()
 
@@ -75,7 +77,7 @@ def _close(o: Obligation, status: str, via: str | None) -> None:
 def pay_mock(oid: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
     """Simulated payment: never uses links from the original message, no real money moves."""
     o = _own(db, oid, user)
-    _close(o, "PAID", "MOCK")
+    _close(o, "PAID", "MOCK", db)
     p = Payment(obligation_id=o.id, user_id=user.id, amount=o.amount, is_mock=True)
     db.add(p)
     db.commit()
@@ -87,7 +89,7 @@ def pay_mock(oid: str, user: User = Depends(current_user), db: Session = Depends
 @router.post("/obligations/{oid}/mark-paid", response_model=ObligationOut)
 def mark_paid(oid: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
     o = _own(db, oid, user)
-    _close(o, "PAID", "USER_MARKED")
+    _close(o, "PAID", "USER_MARKED", db)
     db.commit()
     return o
 
@@ -95,7 +97,7 @@ def mark_paid(oid: str, user: User = Depends(current_user), db: Session = Depend
 @router.post("/obligations/{oid}/dismiss", response_model=ObligationOut)
 def dismiss(oid: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
     o = _own(db, oid, user)
-    _close(o, "DISMISSED", None)
+    _close(o, "DISMISSED", None, db)
     db.commit()
     return o
 
@@ -108,5 +110,6 @@ class SnoozeIn(BaseModel):
 def snooze(oid: str, body: SnoozeIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
     o = _own(db, oid, user)
     o.snoozed_until = now_utc() + timedelta(minutes=body.minutes)
+    reminder_service.acknowledge(db, o, "SNOOZE_30" if body.minutes >= 30 else "SNOOZE_15")
     db.commit()
     return o
