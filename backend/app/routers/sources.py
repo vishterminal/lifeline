@@ -92,6 +92,9 @@ def gmail_callback(code: str | None = None, state: str | None = None, error: str
         raise ApiError(403, "Invalid or expired sign-in state. Start Connect Gmail again.")
     except ValueError:
         raise ApiError(422, "Missing code or state")
+    except gmail_service.WrongAccount:
+        db.commit()
+        return RedirectResponse(f"{front}/connect?gmail=wrong_account")
     except gmail_service.UpstreamError:
         db.commit()
         return RedirectResponse(f"{front}/connect?gmail=error")

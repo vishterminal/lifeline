@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.deps import current_user
+from app.config import get_settings
 from app.errors import ApiError
 from app.models import User
 from app.ratelimit import auth_limit, limiter
@@ -23,7 +24,9 @@ def register(request: Request, body: RegisterIn, db: Session = Depends(get_db)):
         raise ApiError(409, "An account with this email already exists")
     # IMPLEMENTATION DECISION (hackathon build): email/password accounts are judge demo accounts —
     # sources run on sample data. Real, live accounts sign in with Google.
-    user = User(email=email, password_hash=hash_password(body.password), name=body.name, is_demo=True)
+    # Listed owner emails (LIVE_ACCOUNT_EMAILS) get real connectors; everyone else the demo workspace.
+    user = User(email=email, password_hash=hash_password(body.password), name=body.name,
+                is_demo=not get_settings().is_live_account(email))
     db.add(user)
     db.commit()
     return {"token": create_jwt(user.id), "user": user}
@@ -49,6 +52,11 @@ def login(request: Request, body: LoginIn, db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(func.lower(User.email) == body.email.lower()))
     if user is None or not verify_password(body.password, user.password_hash):
         raise ApiError(401, "Wrong email or password")
+    if not user.google_sub:  # the owner list can change: re-apply it at every sign-in
+        live = get_settings().is_live_account(user.email)
+        if user.is_demo == live:
+            user.is_demo = not live
+            db.commit()
     return {"token": create_jwt(user.id), "user": user}
 
 
