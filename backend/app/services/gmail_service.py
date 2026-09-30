@@ -45,10 +45,6 @@ class UpstreamError(Exception):
     pass
 
 
-class WrongAccount(Exception):
-    """The Google account chosen on the consent screen isn't the one this Lifeline account belongs to."""
-
-
 @dataclass
 class EmailMessage:
     id: str
@@ -123,14 +119,7 @@ def complete_oauth(db: Session, code: str, state: str) -> ConnectedSource:
             raise UpstreamError("no refresh token returned")
         src.encrypted_refresh_token = encrypt_secret(tok["refresh_token"])
         prof = httpx.get(f"{API}/profile", headers={"Authorization": f"Bearer {tok['access_token']}"}, timeout=20)
-        address = prof.json().get("emailAddress") if prof.status_code == 200 else None
-        # Only the mailbox of the account owner may be connected: knowing someone's email and
-        # signing up with it must never be enough to read their mail.
-        if not address or address.strip().lower() != (owner.email or "").strip().lower():
-            _revoke(tok.get("refresh_token") or tok.get("access_token"))
-            src.status, src.last_error = "ERROR", "wrong_google_account"
-            raise WrongAccount(address or "unknown")
-        src.gmail_address = address
+        src.gmail_address = prof.json().get("emailAddress") if prof.status_code == 200 else None
     else:
         src.encrypted_refresh_token = None
         src.gmail_address = "mock-inbox@lifeline.local"

@@ -33,9 +33,6 @@ class Settings(BaseSettings):
     # Serverless hosting (e.g. Vercel) keeps the SQLite file in /tmp, which can be reset between
     # cold starts. When true, a valid session whose account vanished gets a fresh judge account.
     ephemeral_db: bool = False
-    # Accounts that use REAL connectors (e.g. real Gmail) on a site where everyone else gets the
-    # demo workspace. Comma-separated emails; change it any time (e.g. to a judge's Gmail).
-    live_account_emails: str = ""
 
     google_client_id: str = ""
     google_client_secret: str = ""
@@ -68,10 +65,6 @@ class Settings(BaseSettings):
     rate_limit_ingest: str = "60/minute"
 
     # --- derived status helpers -------------------------------------------------
-    def is_live_account(self, email: str | None) -> bool:
-        wanted = {e.strip().lower() for e in self.live_account_emails.split(",") if e.strip()}
-        return bool(email) and email.strip().lower() in wanted
-
     @property
     def gmail_live(self) -> bool:
         return self.connector_mode == "live" and bool(

@@ -40,7 +40,6 @@ function GmailCard({ src }: { src: GmailSource }) {
     if (g === 'connected') setMsg({ tone: 'ok', text: 'Gmail connected. Checking your inbox for bills…' })
     if (g === 'denied') setMsg({ tone: 'error', text: 'Gmail access was not granted.' })
     if (g === 'error') setMsg({ tone: 'error', text: 'Could not connect Gmail. Try again.' })
-    if (g === 'wrong_account') setMsg({ tone: 'error', text: 'That Google account is not the email you signed up with. Choose the same Gmail on the Google screen.' })
   }, [params])
 
   const connect = useMutation({
