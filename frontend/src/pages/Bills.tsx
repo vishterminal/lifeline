@@ -289,7 +289,7 @@ export default function Bills() {
         ))}
         {bills.isLoading && <p className="text-muted">Loading…</p>}
         {bills.isError && <Notice tone="error">Couldn't load bills. <button className="underline" onClick={() => bills.refetch()}>Retry</button></Notice>}
-        {bills.data?.length === 0 && <EmptyState>Nothing tracked yet — <Link to="/connect" className="font-semibold text-gold underline">connect a source or run the demo</Link>.</EmptyState>}
+        {bills.data?.length === 0 && <EmptyState>Nothing tracked yet — <Link to="/connect" className="font-semibold text-gold underline">connect your Gmail, WhatsApp or SMS</Link>.</EmptyState>}
         <ul className="space-y-3">
           {bills.data?.map((o) => {
             const isOpen = OPEN.has(o.status)

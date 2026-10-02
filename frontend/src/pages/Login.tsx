@@ -67,7 +67,7 @@ export default function Login() {
       const body = mode === 'login' ? { email, password } : { email, password, name: name || undefined }
       const r = await api<{ token: string; user: User }>(path, { method: 'POST', json: body })
       auth.set(r.token)
-      nav('/connect') // email accounts open straight into judge demo mode
+      nav('/connect') // next step: connect your own Gmail, WhatsApp and SMS
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : 'Could not reach the server. Is the backend running on port 8000?')
     } finally {
@@ -105,7 +105,7 @@ export default function Login() {
             <h2 className="text-2xl font-bold tracking-tight">{mode === 'register' ? 'Create new account' : 'Sign in'}</h2>
             <p className="mt-1 text-sm text-muted">
               {mode === 'register'
-                ? 'Takes 20 seconds. You’ll land in a ready-to-explore demo with sample Gmail, WhatsApp & SMS.'
+                ? 'Takes 20 seconds. Next you connect your own Gmail, WhatsApp and SMS, and your bills start arriving.'
                 : 'Pick up where you left off.'}
             </p>
 

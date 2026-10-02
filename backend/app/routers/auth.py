@@ -21,9 +21,8 @@ def register(request: Request, body: RegisterIn, db: Session = Depends(get_db)):
     email = body.email.lower()
     if db.scalar(select(User.id).where(func.lower(User.email) == email)):
         raise ApiError(409, "An account with this email already exists")
-    # IMPLEMENTATION DECISION (hackathon build): email/password accounts are judge demo accounts —
-    # sources run on sample data. Real, live accounts sign in with Google.
-    user = User(email=email, password_hash=hash_password(body.password), name=body.name, is_demo=True)
+    # Real account: the user connects their own Gmail, WhatsApp and SMS.
+    user = User(email=email, password_hash=hash_password(body.password), name=body.name, is_demo=False)
     db.add(user)
     db.commit()
     return {"token": create_jwt(user.id), "user": user}
@@ -49,6 +48,9 @@ def login(request: Request, body: LoginIn, db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(func.lower(User.email) == body.email.lower()))
     if user is None or not verify_password(body.password, user.password_hash):
         raise ApiError(401, "Wrong email or password")
+    if user.is_demo and not user.email.endswith("@demo.lifeline"):
+        user.is_demo = False  # accounts made while sign-ups were demo-only become real accounts
+        db.commit()
     return {"token": create_jwt(user.id), "user": user}
 
 

@@ -40,9 +40,11 @@ class Settings(BaseSettings):
     google_login_redirect_uri: str = "http://localhost:8000/api/auth/google/callback"
     gmail_poll_minutes: int = 15
     gmail_query: str = (
-        'newer_than:2d (due OR invoice OR renewal OR bill OR debited OR premium '
+        '(due OR invoice OR renewal OR bill OR debited OR premium '
         'OR subscription OR receipt OR "payment")'
     )
+    gmail_first_sync_days: int = 14  # how far back the first check of a newly connected inbox looks
+    cron_secret: str = ""  # Vercel Cron sends "Authorization: Bearer <CRON_SECRET>"
 
     twilio_account_sid: str = ""
     twilio_auth_token: str = ""

@@ -42,11 +42,34 @@ def test_real_account_still_goes_to_google_with_live_keys(client, db, monkeypatc
     assert url.startswith("https://accounts.google.com/") and "gmail.readonly" in url
 
 
-def test_email_signup_is_a_judge_account(client):
-    r = client.post("/api/auth/register", json={"email": "judge.panel@example.com", "password": "password123", "name": "Panel"})
-    assert r.json()["user"]["is_demo"] is True
-    tok = client.post("/api/auth/login", json={"email": "judge.panel@example.com", "password": "password123"}).json()["token"]
-    assert client.get("/api/auth/me", headers={"Authorization": f"Bearer {tok}"}).json()["user"]["is_demo"] is True
+def test_email_signup_is_a_real_account(client, db, monkeypatch):
+    s = get_settings()
+    monkeypatch.setattr(s, "connector_mode", "live")
+    monkeypatch.setattr(s, "google_client_id", "live-client-id")
+    monkeypatch.setattr(s, "google_client_secret", "live-secret")
+    r = client.post("/api/auth/register", json={"email": "real.user@example.com", "password": "password123", "name": "Real"})
+    assert r.json()["user"]["is_demo"] is False
+    h = {"Authorization": f"Bearer {r.json()['token']}"}
+    url = client.get("/api/sources/gmail/connect", headers=h).json()["auth_url"]
+    assert url.startswith("https://accounts.google.com/") and "gmail.readonly" in url  # their own inbox
+
+
+def test_old_demo_signups_become_real_at_sign_in(client, db):
+    from app.models import User
+    from app.security import hash_password
+
+    db.add(User(email="was.judge@example.com", password_hash=hash_password("password123"), is_demo=True))
+    db.commit()
+    r = client.post("/api/auth/login", json={"email": "was.judge@example.com", "password": "password123"})
+    assert r.json()["user"]["is_demo"] is False
+
+
+def test_cron_tick_needs_the_secret(client, monkeypatch):
+    s = get_settings()
+    assert client.get("/api/cron/tick").status_code == 401  # no secret configured: closed
+    monkeypatch.setattr(s, "cron_secret", "cron-secret-123")
+    assert client.get("/api/cron/tick", headers={"Authorization": "Bearer wrong"}).status_code == 401
+    assert client.get("/api/cron/tick", headers={"Authorization": "Bearer cron-secret-123"}).json() == {"status": "ok"}
 
 
 def test_typed_bill_goes_to_review(client, user):

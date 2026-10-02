@@ -96,7 +96,7 @@ export default function Overview() {
             </div>
           </div>
           {open.length === 0
-            ? <EmptyState>No upcoming bills yet. <Link to="/connect" className="font-semibold text-gold underline">Connect a source</Link> or run the demo.</EmptyState>
+            ? <EmptyState>No upcoming bills yet. <Link to="/connect" className="font-semibold text-gold underline">Connect your Gmail, WhatsApp or SMS</Link> to start.</EmptyState>
             : <BarChart data={weeks} title="Amount due per week for the next 8 weeks" />}
         </Card>
         <Card title="Life-load" subtitle="How heavy your next 7 days are" className="h-full">

@@ -12,25 +12,16 @@ Lifeline turns scattered bills, renewals and dues into one connected system. It 
 
 ---
 
-## Try it in 2 minutes
+## Get started
 
-1. Open **[lifeline-tau-ten.vercel.app](https://lifeline-tau-ten.vercel.app)** and fill in **Create new account** (any name, email and password). You land in a ready-to-explore **demo workspace** with sample Gmail, WhatsApp and SMS.
-2. On **Connect**, open **🎓 Judge demo → ▶ Run full demo**. In about a minute Lifeline:
-   - reads a sample Gmail inbox of 7 emails: bills, a renewal, a receipt, a newsletter and **a phishing email**
-   - receives the same electricity bill forwarded on **WhatsApp**
-   - receives it again by **SMS**, plus an **OTP** and a message its two readers disagree on
+1. Open **[lifeline-tau-ten.vercel.app](https://lifeline-tau-ten.vercel.app)** and **Create new account**. Your account is real, and you land on **Connect**.
+2. **Gmail:** press **Connect Gmail** and allow **read-only** access on Google's screen. Lifeline reads the last two weeks of bill-like mail, then checks for new mail whenever you open the app (and once a day on its own).
+3. **WhatsApp:** save your number, send the join code to the Lifeline WhatsApp number once, then forward any bill (text, photo or PDF). Lifeline replies instantly; send `WHAT'S DUE` or ask a question ending in `?`.
+4. **SMS (Android):** create your private SMS token on Connect and paste it, with the webhook address shown there, into a free SMS-forwarder app. Bill SMS arrive automatically; OTPs are dropped.
+5. **Review** anything Lifeline wasn't sure about (a new biller, two readers disagreeing, a suspicious sender). Everything else goes straight to **Bills**, ranked by what missing it would cost you.
+6. Add your balance and salary day in **Settings** to unlock **Cash flow**, and turn on **notifications** for reminders.
 
-   You can also use the phones yourself.
-3. **Review**: the electricity bill arrived through **three channels** but is shown **once**. Confirm it; amounts are pre-filled from what was detected.
-4. **Connect → SMS phone**: the reviewed message has left the phone. Forward **"Rs.1840.00 debited…"** and Lifeline **marks the bill paid by itself**.
-5. **Review → Suspicious**: the fake "Netflix" email is blocked, with the reasons (look-alike domain `netf1ix-billing.co`, DMARC fail, misleading link, pressure wording).
-6. **Bills**, ranked by ₹ risk: the **PUC certificate is #1** even without an amount, because an expired PUC **blocks the bike-insurance renewal**. Open it for the chain, **🔮 What if I skip this?**, and **Pay now (simulated)**.
-7. **Reminders**: press **⏩ Simulate next 7 days**. Low-risk bills get a nudge, while high-risk ones escalate to WhatsApp and finally a family member. Snooze or mark paid right there; paying stops everything.
-8. **Cash flow** plans each payment around your salary day and balance. **Subscriptions** (from Bills) shows monthly and yearly cost and duplicate services. Forward the **AutoPay pre-debit SMS** and Lifeline warns you before Netflix charges you, and asks **"Still using it?"**. Forward the **₹2,950 TNEB bill** and Bills shows a **bill-shock alert**: 60% higher than your usual.
-9. On an overdue bill, **✍️ Penalty Fighter** drafts a polite late-fee waiver request from facts only.
-10. **💬 Ask Lifeline** (bottom-right): "What's most urgent?", "Can I afford my bills before salary?". It answers from your own data. It works on WhatsApp too: end the message with `?`.
-11. **More → Documents** (expiry dates become tracked renewals), **More → Monthly report** (penalties avoided), and **Split** on any bill.
-12. **Overview** is your money dashboard, with a Life-load score. **Judge demo → Reset** replays everything.
+> While the Google app is in testing, Google only lets the Gmail accounts added as test users connect, and asks them to reconnect about once a week.
 
 | Connect: real-looking phones | Review: never guesses |
 |---|---|
@@ -70,9 +61,11 @@ Lifeline turns scattered bills, renewals and dues into one connected system. It 
 | 🔔 | **Real push notifications** | Installable web app (PWA) with web push for reminders; enable in Settings. |
 | 🔒 | **Privacy by design** | Messages are **never stored or logged**; only the extracted biller, amount and date are kept. Card, account, Aadhaar, PAN and phone numbers are masked **before** any AI call. A test scans the database file to prove it. **Delete all my data** wipes everything. |
 
-## Demo workspace vs. live mode
+## Real connections
 
-The hosted app runs **demo workspaces**: each new account gets realistic sample sources flowing through the **same pipeline code** the live integrations use. With API keys configured, the same screens connect to a real Gmail inbox, a real WhatsApp number (Twilio) and an Android SMS forwarder.
+Every account connects the user's own sources: their Gmail inbox (Google OAuth, `gmail.readonly` only), their WhatsApp number (Twilio, signature-checked webhook) and their phone's SMS (an Android forwarder posting to a token-protected webhook). A Vercel Cron job checks connected inboxes and runs the reminder engine daily, and the app refreshes them whenever it is opened.
+
+A sample-data **demo workspace** (sample Gmail inbox, WhatsApp and SMS phone simulators, one-click full demo) is still built in and powers the automated browser test.
 
 **Verified live by the team:**
 - real Google sign-in
@@ -116,7 +109,7 @@ Every input takes this one path: `backend/app/services/pipeline.py`.
 
 ## Quality
 
-- **112 backend tests** cover:
+- **114 backend tests** cover:
   - OTP filter and redaction
   - both readers and the disagreement check
   - fake-bill scoring, including "a friend sends a fake bill from Gmail"
@@ -129,7 +122,7 @@ Every input takes this one path: `backend/app/services/pipeline.py`.
   - webhook security (bad token, bad signature)
   - Gmail OAuth state and expiry
   - a database scan proving no message text is stored
-- **End-to-end browser test** (`e2e/click_through.py`) clicks every button, from sign-up through reminders, cash flow, subscriptions, Penalty Fighter, bill splits, documents, the report, Ask Lifeline, photo OCR, AutoPay, bill shock and notifications to delete-all. **35/35 steps pass.**
+- **End-to-end browser test** (`e2e/click_through.py`) clicks every button, from a real sign-up (connect your own Gmail) through the demo workspace's reminders, cash flow, subscriptions, Penalty Fighter, bill splits, documents, the report, Ask Lifeline, photo OCR, AutoPay, bill shock and notifications to delete-all. **36/36 steps pass.**
 
 ```bash
 cd backend && python -m pytest
@@ -144,7 +137,7 @@ Needs Python 3.10+. Run **`start.bat`** (Windows) or **`./start.sh`** (macOS/Lin
 ```
 api/index.py            Vercel entry point for the Python API
 backend/app/            FastAPI app: routers/, services/ (pipeline, trust, extraction, risk, gmail, whatsapp, sms), llm/, data/
-backend/tests/          112 tests
+backend/tests/          114 tests
 frontend/src/           React app: pages/, judge-mode simulators, design system
 frontend/dist/          built web app
 e2e/click_through.py    browser test of every button

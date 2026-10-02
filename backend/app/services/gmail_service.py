@@ -126,8 +126,8 @@ def complete_oauth(db: Session, code: str, state: str) -> ConnectedSource:
     src.status = "CONNECTED"
     src.last_error = None
     src.consented_at = now_utc()
-    # Start from "now minus 2 days" to match the newer_than:2d query.
-    src.gmail_cursor_ms = int((now_utc() - timedelta(days=2)).timestamp() * 1000)
+    # The first check looks back a couple of weeks; after that only newer mail is read.
+    src.gmail_cursor_ms = int((now_utc() - timedelta(days=get_settings().gmail_first_sync_days)).timestamp() * 1000)
     db.add(Consent(user_id=src.user_id, kind="GMAIL"))
     db.flush()
     return src

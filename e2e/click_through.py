@@ -53,13 +53,22 @@ with sync_playwright() as p:
         expect(page.get_by_role("heading", name="Sign in")).to_be_visible()
         page.get_by_role("button", name="Create new account").click()
 
-    @step("Create account -> lands in judge demo on Connect")
+    @step("Create account -> a real account: connect your own Gmail, no demo controls")
     def _():
         page.get_by_label("Full name").fill("Panel Judge")
         page.get_by_label("Email").fill(judge_email)
         page.get_by_label("Password").fill("password123")
         page.get_by_role("button", name="Create account").click()
         page.wait_for_url("**/connect")
+        expect(page.get_by_role("button", name="Connect Gmail")).to_be_visible()
+        expect(page.get_by_role("button", name=re.compile("Judge demo"))).to_have_count(0)
+        expect(page.get_by_text("SAMPLE INBOX", exact=False)).to_have_count(0)
+
+    @step("Open a demo workspace (sample data) for the remaining checks")
+    def _():
+        tok = page.evaluate("fetch('/api/auth/demo', {method: 'POST'}).then(r => r.json()).then(j => j.token)")
+        page.evaluate(f"localStorage.setItem('lifeline_token', '{tok}')")
+        page.goto(BASE + "/connect")
         expect(page.get_by_role("button", name=re.compile("Judge demo"))).to_be_visible()
 
     @step("Nav order: Connect, Review, Bills, Reminders, Overview, Cash flow, Calendar, Settings")
@@ -432,7 +441,7 @@ with sync_playwright() as p:
         page.goto(BASE + "/proof")
         expect(page.get_by_text("Verified against real services")).to_be_visible()
         page.goto(BASE + "/overview")
-        page.get_by_role("button", name=re.compile("Panel Judge")).click()
+        page.locator("header button[aria-haspopup='menu']", has_text="Judge").first.click()
         page.get_by_role("menuitem", name="Sign out").click()
         page.wait_for_url("**/login")
 

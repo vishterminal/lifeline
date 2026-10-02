@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, NavLink, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { api, auth, type Confirmation, type Flagged, type User } from './api'
+import { api, auth, type Confirmation, type Flagged, type GmailSource, type Source, type User } from './api'
 import AskLifeline from './AskLifeline'
 import { DemoPill } from './judge'
 import { Logo } from './ui'
@@ -159,11 +159,34 @@ function Shell() {
         <Outlet />
       </main>
       <AskLifeline />
+      <AutoRefresh />
       <footer className="mx-auto max-w-6xl px-4 pb-24 text-xs text-muted sm:px-6 print:hidden">
         Lifeline stores only extracted bill details — never your emails or messages. · <Link to="/proof" className="hover:text-gold">Proven live</Link>
       </footer>
     </div>
   )
+}
+
+/** Keeps a real account fresh without a background server: when the app opens, check the
+ * connected Gmail inbox (if not checked in the last 10 minutes) and run the reminder engine. */
+function AutoRefresh() {
+  const qc = useQueryClient()
+  const done = useRef(false)
+  useEffect(() => {
+    if (done.current || !auth.get()) return
+    done.current = true
+    ;(async () => {
+      try {
+        const sources = await api<Source[]>('/sources')
+        const gm = sources.find((s) => s.kind === 'GMAIL') as GmailSource | undefined
+        const stale = !gm?.last_sync_at || Date.now() - new Date(gm.last_sync_at).getTime() > 10 * 60_000
+        if (gm && gm.mode === 'live' && gm.status === 'CONNECTED' && stale) await api('/sources/gmail/sync', { method: 'POST' })
+        await api('/reminders/tick', { method: 'POST' })
+        ;['sources', 'confirmations', 'flagged', 'obligations', 'bills', 'events', 'reminders'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }))
+      } catch { /* best effort: the pages still work without it */ }
+    })()
+  }, [qc])
+  return null
 }
 
 export default function App() {
