@@ -32,7 +32,9 @@ export async function api<T = unknown>(path: string, opts: RequestInit & { json?
   const res = await fetch(`/api${path}`, { ...opts, headers, body })
   const data = res.headers.get('content-type')?.includes('json') ? await res.json() : null
   if (!res.ok) {
-    if (res.status === 401 && token && !path.startsWith('/ingest/sms')) {
+    // Session expired: back to sign-in. Skip it if this was an old request from a session that has
+    // already ended (signed out / deleted), so it can't reload the page you're on now.
+    if (res.status === 401 && token && token === auth.get() && !path.startsWith('/ingest/sms')) {
       auth.clear()
       window.location.href = '/login'
     }
