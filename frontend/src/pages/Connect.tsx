@@ -29,22 +29,43 @@ function ResultNote({ r }: { r: PipelineResult | null }) {
 }
 
 // --- Gmail ---------------------------------------------------------------------------
+const BLOCKED_HINT = 'If Google said “Access blocked”, your Gmail isn’t on Lifeline’s allowed list yet. Ask the Lifeline team to add your Gmail address, then try again.'
+const ATTEMPT_KEY = 'lifeline_gmail_attempt'
+function rememberAttempt() { try { sessionStorage.setItem(ATTEMPT_KEY, String(Date.now())) } catch { /* storage blocked */ } }
+function forgetAttempt() { try { sessionStorage.removeItem(ATTEMPT_KEY) } catch { /* storage blocked */ } }
+function startedAttempt() {
+  try {
+    const t = Number(sessionStorage.getItem(ATTEMPT_KEY))
+    return !!t && Date.now() - t < 30 * 60_000
+  } catch { return false }
+}
+
 function GmailCard({ src }: { src: GmailSource }) {
   const invalidate = useInvalidate()
   const [params] = useSearchParams()
   const judge = useJudgeMode()
   const [items, setItems] = useState<SyncItem[] | null>(null)
-  const [msg, setMsg] = useState<{ tone: 'ok' | 'error' | 'info'; text: string } | null>(null)
+  const [msg, setMsg] = useState<{ tone: 'ok' | 'error' | 'info' | 'warn'; text: string } | null>(null)
   useEffect(() => {
     const g = params.get('gmail')
+    if (g) forgetAttempt()
     if (g === 'connected') setMsg({ tone: 'ok', text: 'Gmail connected. Checking your inbox for bills…' })
-    if (g === 'denied') setMsg({ tone: 'error', text: 'Gmail access was not granted.' })
+    if (g === 'denied') setMsg({ tone: 'error', text: `Gmail access was not granted. ${BLOCKED_HINT}` })
     if (g === 'error') setMsg({ tone: 'error', text: 'Could not connect Gmail. Try again.' })
   }, [params])
+  // Google shows its own "Access blocked" page (no way back to us) when a Gmail isn't on the app's
+  // test-user list. If someone returns here without finishing, explain what probably happened.
+  useEffect(() => {
+    if (src.mode !== 'live' || params.get('gmail') || src.status === 'CONNECTED') return
+    if (startedAttempt()) {
+      forgetAttempt()
+      setMsg({ tone: 'warn', text: `Gmail didn't connect. ${BLOCKED_HINT}` })
+    }
+  }, [src.mode, src.status, params])
 
   const connect = useMutation({
     mutationFn: () => api<{ auth_url: string }>('/sources/gmail/connect'),
-    onSuccess: (r) => { window.location.href = r.auth_url },
+    onSuccess: (r) => { rememberAttempt(); window.location.href = r.auth_url },
     onError: (e) => setMsg({ tone: 'error', text: errText(e) }),
   })
   const sync = useMutation({
@@ -54,7 +75,7 @@ function GmailCard({ src }: { src: GmailSource }) {
       if (r.items) setItems(r.items)
       if (r.status === 'NEEDS_RECONNECT') setMsg({ tone: 'error', text: 'Gmail access expired — reconnect below.' })
       else if (r.status === 'ERROR') setMsg({ tone: 'error', text: r.error ?? 'Could not read Gmail. Try again.' })
-      else if (r.fetched === 0) setMsg({ tone: 'info', text: 'Inbox checked — no new bill-like emails since the last check (looks at the last 2 days).' })
+      else if (r.fetched === 0) setMsg({ tone: 'info', text: 'Inbox checked: no new bill-like emails since the last check.' })
       else setMsg({ tone: 'ok', text: `Checked ${r.fetched} bill-like email(s): ${r.saved} added, ${r.needs_review} to review, ${r.flagged} suspicious.` })
     },
     onError: (e) => setMsg({ tone: 'error', text: errText(e) }),
@@ -72,7 +93,7 @@ function GmailCard({ src }: { src: GmailSource }) {
 
   const connected = src.status === 'CONNECTED' || src.status === 'ERROR'
   return (
-    <Card icon="✉️" title="Gmail" subtitle="Reads only bill-like emails (read-only access). Checks every 15 minutes." status={<StatusBadge status={src.status} />}>
+    <Card icon="✉️" title="Gmail" subtitle="Reads only bill-like emails (read-only access). Checks for new bills automatically." status={<StatusBadge status={src.status} />}>
       <div className="space-y-3">
         {src.status === 'NEEDS_RECONNECT' && <Notice tone="warn">Google access expired (testing-mode tokens last ~7 days). Reconnect to keep collecting.</Notice>}
         {connected ? (
@@ -87,9 +108,17 @@ function GmailCard({ src }: { src: GmailSource }) {
             </div>
           </>
         ) : (
-          <Button onClick={() => connect.mutate()} disabled={connect.isPending}>
-            {src.status === 'NEEDS_RECONNECT' ? 'Reconnect Gmail' : 'Connect Gmail'}
-          </Button>
+          <>
+            <Button onClick={() => connect.mutate()} disabled={connect.isPending}>
+              {src.status === 'NEEDS_RECONNECT' ? 'Reconnect Gmail' : 'Connect Gmail'}
+            </Button>
+            {src.mode === 'live' && (
+              <p className="text-xs text-muted">
+                Google will ask you to allow read-only access. If it shows “Google hasn’t verified this app”, press <b>Advanced</b> then <b>Go to Lifeline</b>.
+                If it says “Access blocked”, ask the Lifeline team to add your Gmail address first.
+              </p>
+            )}
+          </>
         )}
         {src.mode === 'mock' && (
           <p className="text-xs text-gold/80">Judge demo: "Connect Gmail" connects a sample inbox with real-world cases — bills, a renewal, a receipt, a newsletter and a phishing email. For real accounts the same button opens Google's read-only consent screen.</p>
